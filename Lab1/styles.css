@@ -1,0 +1,50 @@
+/* Reset defaults */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; }
+
+/* The header bar itself */
+header {
+  border-bottom: 1px solid #eee;
+  padding: 1.25rem 3rem;
+}
+
+/* The nav inside the header — make it a flex row */
+header nav {
+  display: flex;
+  justify-content: space-between;  /* logo left, links right */
+  align-items: center;             /* vertically center everything */
+}
+
+/* The logo's anchor wrapper */
+header nav > a {
+  display: inline-block;
+  line-height: 0;                  /* kills phantom space under img */
+}
+
+/* The logo image */
+header nav img {
+  height: 40px;                    /* controls logo size */
+  width: auto;                     /* keeps aspect ratio */
+  display: block;
+}
+header nav img:hover {
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+/* The list of nav links */
+header nav ul {
+  display: flex;
+  gap: 2rem;                       /* spacing between links */
+  list-style: none;                /* removes the bullet points */
+}
+
+/* Each link in the list */
+header nav ul a {
+  text-decoration: none;           /* removes the underline */
+  color: #333;
+  font-weight: 500;
+}
+header nav ul a:hover {
+  color: #0066cc;
+}
