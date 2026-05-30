@@ -1,50 +1,71 @@
 /* Reset defaults */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: system-ui, sans-serif; }
+body { font-family: system-ui, sans-serif; background-color: #87ceeb; }
 
 /* The header bar itself */
 header {
-  border-bottom: 1px solid #eee;
-  padding: 1.25rem 3rem;
+  background-color: #000;
+  padding: 1.5rem 3rem;
 }
 
-/* The nav inside the header — make it a flex row */
+/* The nav inside the header - logo left, links right */
 header nav {
   display: flex;
-  justify-content: space-between;  /* logo left, links right */
-  align-items: center;             /* vertically center everything */
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* The logo's anchor wrapper */
+/* The logo's anchor wrapper - clips top/bottom of the image */
 header nav > a {
-  display: inline-block;
-  line-height: 0;                  /* kills phantom space under img */
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  overflow: hidden;
+  line-height: 0;
+  flex-shrink: 0;
 }
 
-/* The logo image */
-header nav img {
-  height: 40px;                    /* controls logo size */
-  width: auto;                     /* keeps aspect ratio */
+/* Banner logo - taller than the wrapper so top/bottom get cropped */
+header nav img.banner-logo {
+  height: 140px;
+  width: auto;
   display: block;
 }
-header nav img:hover {
+header nav img.banner-logo:hover {
   opacity: 0.8;
   transition: opacity 0.2s;
 }
 
-/* The list of nav links */
-header nav ul {
+/* Nav links container div */
+.nav-links ul {
   display: flex;
-  gap: 2rem;                       /* spacing between links */
-  list-style: none;                /* removes the bullet points */
+  gap: 2rem;
+  list-style: none;
 }
 
-/* Each link in the list */
-header nav ul a {
-  text-decoration: none;           /* removes the underline */
-  color: #333;
+/* Each link */
+.nav-links ul a {
+  text-decoration: none;
+  color: #fff;
   font-weight: 500;
+  letter-spacing: 0.03em;
 }
-header nav ul a:hover {
-  color: #0066cc;
+.nav-links ul a:hover {
+  color: #ccc;
+}
+
+main section {
+  padding-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+main section h2 {
+  margin-bottom: 1.5rem;
+}
+
+.hero-img {
+  width: 60%;
+  display: block;
 }
