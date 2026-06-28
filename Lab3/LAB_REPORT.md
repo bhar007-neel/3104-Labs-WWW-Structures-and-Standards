@@ -18,7 +18,9 @@ Uranus Fitness is a community-focused fitness training website designed to provi
 
 ### Interaction Goals
 1. **Home Page (index.html):** Engage visitors with a welcoming interactive modal that introduces the website and encourages exploration
-2. **Registration Page (registration.html):** Validate user input in real-time and provide clear feedback to ensure data quality and improve user experience
+2. **About Page (about.html):** Let users browse common questions through an accordion FAQ without leaving the page
+3. **Schedule Page (schedule.html):** Allow users to filter and sort training plans to quickly find the right option
+4. **Registration Page (registration.html):** Validate user input and provide clear inline feedback to ensure data quality before submission
 
 ---
 
@@ -28,13 +30,14 @@ Uranus Fitness is a community-focused fitness training website designed to provi
 ```
 Lab3/
 ├── index.html              # Home page
-├── index.js                # Home page JavaScript
+├── index.js                # Home page JavaScript — welcome modal
+├── about.html              # About page
+├── about.js                # About page JavaScript — accordion FAQ
+├── schedule.html           # Schedule page
+├── schedule.js             # Schedule page JavaScript — plans array, filter, sort, details
 ├── registration.html       # Registration/Contact page
-├── registration.js         # Registration page JavaScript
-├── about.html              # About page (no JavaScript changes)
-├── about.js                # About page (empty)
-├── schedule.html           # Schedule page (no JavaScript changes)
-├── schedule.js             # Schedule page (empty)
+├── registration.js         # Registration page JavaScript — form validation
+├── script.js               # Shared JavaScript — active nav link highlight (all pages)
 ├── styles.css              # Shared stylesheet for all pages
 ├── img/                    # Image assets folder
 │   ├── logo.png
@@ -72,9 +75,14 @@ Lab3/
 ### Submitted Files Description
 - **index.html:** Main landing page with hero section and feature cards
 - **index.js:** Implements welcome modal that displays on first visit
+- **about.html:** About page with mission, workshop overview, and accordion FAQ
+- **about.js:** Accordion open/close logic using aria-expanded and classList
+- **schedule.html:** Schedule page with filterable and sortable plan table
+- **schedule.js:** Plans data array, filter buttons, sort control, and details panel
 - **registration.html:** Form-based registration page with multiple input types
-- **registration.js:** Handles client-side form validation with error messaging
-- **styles.css:** Contains all styling including new modal and error message classes
+- **registration.js:** Handles client-side form validation with error messaging and success confirmation
+- **script.js:** Shared file linked on all pages — sets aria-current="page" on the active nav link dynamically
+- **styles.css:** Contains all styling including modal, accordion, form error/success, and filter button styles
 
 ---
 
@@ -104,7 +112,10 @@ Lab3/
 // 2. Helper Functions
 // - createErrorMessage(): Creates styled error div elements
 // - clearErrors(): Removes all existing error messages
+// - clearFormMessage(): Clears the success message between submissions
+// - showSuccessMessage(): Displays confirmation in .form-message element
 // - validateEmail(): Validates email format using regex
+// - validatePhone(): Validates phone format (min 10 digits, common formats accepted)
 // - validateForm(): Runs all validation checks
 
 // 3. Validation Rules
@@ -113,7 +124,48 @@ Lab3/
 
 // 4. Event Listener
 // - Form submit event handler
-// - Prevents submission if validation fails
+// - Always prevents default; shows errors or success message based on validation
+```
+
+### about.js Structure
+```javascript
+// 1. initAccordion()
+// - Runs on DOMContentLoaded
+// - Queries all .accordion-btn elements
+// - Attaches click listener to each button
+
+// 2. toggleAccordionItem(btn)
+// - Reads and flips aria-expanded on the button
+// - Toggles .accordion-panel--open class on the associated panel
+```
+
+### schedule.js Structure
+```javascript
+// 1. Data
+// - plans array of objects (name, duration, style, price, level, description)
+
+// 2. Dynamic UI creation
+// - Filter buttons and sort dropdown created and inserted before the table
+// - Feedback paragraph and details panel created dynamically
+
+// 3. Named functions
+// - getDurationNumber(): Parses duration string for sorting
+// - getVisiblePlans(): Filters and sorts the plans array
+// - renderPlans(): Builds table rows from the filtered array using forEach
+// - updateActiveFilterButton(): Updates aria-pressed and .active class
+
+// 4. Event listeners
+// - click on filter buttons (delegated)
+// - change on sort select
+// - click on table rows (delegated) — shows details or stores plan in localStorage
+```
+
+### script.js Structure
+```javascript
+// 1. highlightActiveNavLink()
+// - Runs on DOMContentLoaded on every page
+// - Reads window.location.pathname to find current filename
+// - Sets aria-current="page" on the matching nav link
 ```
 
 ---
@@ -167,22 +219,69 @@ Lab3/
 - **Interaction:** User clicks "Get Started" button to dismiss
 - **State Persistence:** localStorage flag (`welcomeModalShown`) prevents modal from reappearing
 
-### 2. Form Submission Validation (registration.html)
+### 2. Accordion FAQ (about.html)
+**Event Type:** `click`
+- **Trigger:** User clicks an accordion button
+- **Behavior:**
+  - Toggles the associated panel open or closed
+  - Flips aria-expanded on the button
+  - Rotates the + icon via CSS to indicate state
+- **Interaction:** Each FAQ item expands independently on click
+
+### 3. Schedule Filter (schedule.html)
+**Event Type:** `click`
+- **Trigger:** User clicks a filter button (All, Beginner, Intermediate, Advanced)
+- **Behavior:**
+  - Updates the active filter and re-renders the table from the plans array
+  - Updates aria-pressed and .active class on the selected button
+  - Shows a "Showing N plan(s)" feedback message
+- **Interaction:** Table updates immediately to show only matching plans
+
+### 4. Schedule Sort (schedule.html)
+**Event Type:** `change`
+- **Trigger:** User changes the sort dropdown
+- **Behavior:**
+  - Re-renders the table sorted by price or duration
+- **Interaction:** Table reorders immediately on selection change
+
+### 5. Plan Details (schedule.html)
+**Event Type:** `click`
+- **Trigger:** User clicks "View details" on a table row
+- **Behavior:**
+  - Populates a details panel below the table with the plan's description, duration, style, and price
+  - Highlights the selected row with .selected-plan class
+- **Interaction:** Details panel updates without leaving the page
+
+### 6. Form Submission Validation (registration.html)
 **Event Type:** `submit`
 - **Trigger:** User clicks "Submit registration" button
 - **Behavior:**
-  - Executes comprehensive validation before submission
-  - Clears previous error messages
+  - Always prevents default navigation
+  - Clears previous error messages and success message
   - Validates all form fields
-  - Displays error messages for invalid fields
-  - Prevents form submission if any field is invalid
-- **Interaction:** User must correct errors and resubmit
+  - Displays inline error messages for invalid fields or shows success confirmation
+- **Interaction:** User must correct errors and resubmit; success message confirms valid submission
 
 ---
 
 ## Dynamic Feature Using Array/Object
 
+The schedule page (`schedule.js`) uses an array of objects to store and render all training plan data.
 
+### Data Structure
+```javascript
+const plans = [
+  { name: "Beginner Plan",     duration: "2 weeks", style: "Machine-assisted exercises",  price: 49, level: "beginner",     description: "..." },
+  { name: "Intermediate Plan", duration: "5 weeks", style: "Free weight exercises",        price: 59, level: "intermediate", description: "..." },
+  { name: "Advanced Plan",     duration: "8 weeks", style: "Compound lifts + diet plans",  price: 69, level: "advanced",     description: "..." },
+];
+```
+
+### How It Is Used
+`renderPlans()` calls `getVisiblePlans()` which filters and sorts the array, then loops the result with `forEach` to create one `<tr>` element per plan and append it to the table body. The table content is never hardcoded in HTML — it is built entirely from the array on every filter or sort change.
+
+### Why This Structure
+Grouping each plan's fields in one object keeps related data together. Adding or changing a plan means editing one array entry rather than HTML markup. The loop keeps rendering logic in one place and handles any number of plans automatically.
 
 ---
 
@@ -194,7 +293,7 @@ Lab3/
 |---|---|---|---|
 | Full Name | Text | Must not be empty | "Please enter your full name." |
 | Email | Email | Must not be empty AND must match email format | "Please enter your email address." / "Please enter a valid email address." |
-| Phone Number | Tel | Must not be empty | "Please enter your phone number." |
+| Phone Number | Tel | Must not be empty; must match `/^\+?[\d\s\-().]{10,}$/` | "Please enter your phone number." / "Please enter a valid phone number (at least 10 digits)." |
 | Age Range | Select | Must have a selection (not default) | "Please select an age range." |
 | Membership Plan | Radio | Must have at least one option selected | "Please select a membership plan." |
 | Contact Method | Select | Must have a selection | "Please select a preferred contact method." |
@@ -220,9 +319,9 @@ This pattern ensures:
    - Checks each field against its validation rule
    - Appends error message `<div>` if validation fails
    - Returns false if any field fails
-4. If validation fails, `event.preventDefault()` stops form submission
-5. User sees error messages and must correct fields
-6. Upon successful validation, form submission proceeds
+4. `event.preventDefault()` is always called — prevents navigation on both valid and invalid paths
+5. If invalid: user sees error messages and must correct fields
+6. If valid: form fields are reset and a success confirmation message appears on the page
 
 ![Invalid form](./Screenshots/registration_fail.png)
 
