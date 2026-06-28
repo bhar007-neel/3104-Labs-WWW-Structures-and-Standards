@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const contactMethodSelect = document.getElementById('contact-method');
   const startDateInput = document.getElementById('start-date');
   const aboutTextarea = document.getElementById('about');
+  const successMessage = document.getElementById('form-success');
 
   function createErrorMessage(fieldName) {
     const errorDiv = document.createElement('div');
