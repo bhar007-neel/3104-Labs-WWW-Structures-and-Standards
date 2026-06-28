@@ -309,6 +309,20 @@ main {
   color: #34515f;
 }
 
+.form-message {
+  margin-top: 0.9rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.form-message--success {
+  background: #e7f7ee;
+  color: #135d32;
+  border: 1px solid #8dd6a9;
+}
+
 /* Schedule table */
 .table-wrap {
   overflow-x: auto;

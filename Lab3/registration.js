@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
   const form = document.querySelector('.registration-form');
+  const formMessage = document.querySelector('.form-message');
   const fullNameInput = document.getElementById('full-name');
   const emailInput = document.getElementById('email');
   const phoneInput = document.getElementById('phone');
@@ -21,6 +22,22 @@ document.addEventListener('DOMContentLoaded', function() {
     existingErrors.forEach(error => error.remove());
   }
 
+  function clearFormMessage() {
+    if (formMessage) {
+      formMessage.textContent = '';
+      formMessage.classList.remove('form-message--success');
+    }
+  }
+
+  function showSuccessMessage() {
+    if (!formMessage) {
+      return;
+    }
+
+    formMessage.textContent = 'Registration submitted successfully. We will contact you soon with the next steps.';
+    formMessage.classList.add('form-message--success');
+  }
+
   function validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -28,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function validateForm() {
     clearErrors();
+    clearFormMessage();
     let isValid = true;
 
     // Validate full name
@@ -98,6 +116,11 @@ document.addEventListener('DOMContentLoaded', function() {
   form.addEventListener('submit', function(event) {
     if (!validateForm()) {
       event.preventDefault();
+      return;
     }
+
+    event.preventDefault();
+    form.reset();
+    showSuccessMessage();
   });
 });
