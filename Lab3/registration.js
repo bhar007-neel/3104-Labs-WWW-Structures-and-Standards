@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const contactMethodSelect = document.getElementById('contact-method');
   const startDateInput = document.getElementById('start-date');
   const aboutTextarea = document.getElementById('about');
+  const successMessage = document.getElementById('form-success');
 
   function createErrorMessage(fieldName) {
     const errorDiv = document.createElement('div');
@@ -19,6 +20,14 @@ document.addEventListener('DOMContentLoaded', function() {
   function clearErrors() {
     const existingErrors = document.querySelectorAll('.form-error');
     existingErrors.forEach(error => error.remove());
+  }
+
+  function showSuccess() {
+    successMessage.removeAttribute('hidden');
+  }
+
+  function hideSuccess() {
+    successMessage.setAttribute('hidden', '');
   }
 
   function validateEmail(email) {
@@ -96,8 +105,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   form.addEventListener('submit', function(event) {
-    if (!validateForm()) {
-      event.preventDefault();
+    event.preventDefault();
+    if (validateForm()) {
+      showSuccess();
+      form.reset();
+    } else {
+      hideSuccess();
     }
   });
 });
