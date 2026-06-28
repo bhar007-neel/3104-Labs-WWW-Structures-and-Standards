@@ -39,6 +39,33 @@ Lab3/
 ├── img/                    # Image assets folder
 │   ├── logo.png
 │   └── old_guypng.png
+├── Screenshots/            # Validation and testing screenshots
+│   ├── about_after.png
+│   ├── about_before.png
+│   ├── about_html_valid.png
+│   ├── about_js_valid.png
+│   ├── about_mobile.png
+│   ├── about_tablet.png
+│   ├── css_valid.png
+│   ├── home_after.png
+│   ├── home_before.png
+│   ├── home_js_valid.png
+│   ├── home_mobile.png
+│   ├── home_tablet.png
+│   ├── index_html_valid.png
+│   ├── registration_fail.png
+│   ├── registration_html_valid.png
+│   ├── registration_mobile.png
+│   ├── registration_success.png
+│   ├── registration_tablet.png
+│   ├── registration_js_valid.png
+│   ├── schedule_after.png
+│   ├── schedule_before.png
+│   ├── schedule_html_valid.png
+│   ├── schedule_js_valid.png
+│   ├── schedule_mobile.png
+│   └── schedule_tablet.png
+├── CSI3140_Lab3_SpringSummer2026.pdf
 └── LAB_REPORT.md          # This report
 ```
 
@@ -197,11 +224,9 @@ This pattern ensures:
 5. User sees error messages and must correct fields
 6. Upon successful validation, form submission proceeds
 
----
+![Invalid form](./Screenshots/registration_fail.png)
 
-## Screenshots
-
-
+![Valid form](./Screenshots/registration_success.png)
 
 ---
 
@@ -212,7 +237,21 @@ This pattern ensures:
 ---
 
 ## JavaScript and Dynamic Behavior Checklist
-
+- [x] All relevant pages link correctly to the external JavaScript file.
+- [x] JavaScript code is placed in an external .js file.
+- [x] Inline JavaScript is avoided or explicitly justified.
+- [x] The JavaScript file is organized with meaningful comments and functions.
+- [x] DOM elements are selected and modified dynamically.
+- [x] At least three meaningful event-driven interactions are implemented.
+- [x] At least one dynamic feature uses an array or object.
+- [x] The website includes form validation using JavaScript.
+- [x] Clear error messages are displayed for invalid form input.
+- [x] Invalid form submission is prevented.
+- [x] A success or confirmation message is displayed when the form is valid.
+- [x] Interactive elements are usable with the keyboard.
+- [x] JavaScript errors were checked using browser developer tools.
+- [x] The website was tested in desktop, tablet, and mobile widths.
+- [x] HTML, CSS, and JavaScript files were checked using appropriate validation or debugging tools.
 
 
 ---

@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Cache all form inputs once so they don't need to be queried on every validation run.
   const form = document.querySelector('.registration-form');
+  const formMessage = document.querySelector('.form-message');
   const fullNameInput = document.getElementById('full-name');
   const emailInput = document.getElementById('email');
   const phoneInput = document.getElementById('phone');
@@ -9,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const contactMethodSelect = document.getElementById('contact-method');
   const startDateInput = document.getElementById('start-date');
   const aboutTextarea = document.getElementById('about');
-  const successMessage = document.getElementById('form-success');
 
   // Creates a styled error div with the given message text.
   function createErrorMessage(fieldName) {
@@ -25,14 +25,21 @@ document.addEventListener('DOMContentLoaded', function() {
     existingErrors.forEach(error => error.remove());
   }
 
-  // Reveals the success banner after a valid submission.
-  function showSuccess() {
-    successMessage.removeAttribute('hidden');
+  // Clears the success message so it doesn't persist across validation runs.
+  function clearFormMessage() {
+    if (formMessage) {
+      formMessage.textContent = '';
+      formMessage.classList.remove('form-message--success');
+    }
   }
 
-  // Re-hides the success banner if the user submits again with errors.
-  function hideSuccess() {
-    successMessage.setAttribute('hidden', '');
+  // Reveals the success confirmation in the .form-message element.
+  function showSuccessMessage() {
+    if (!formMessage) {
+      return;
+    }
+    formMessage.textContent = 'Registration submitted successfully. We will contact you soon with the next steps.';
+    formMessage.classList.add('form-message--success');
   }
 
   // Returns true if the email matches a basic format: characters@domain.tld
@@ -52,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // true only when every field passes.
   function validateForm() {
     clearErrors();
+    clearFormMessage();
     let isValid = true;
 
     // Validate full name
@@ -123,15 +131,16 @@ document.addEventListener('DOMContentLoaded', function() {
     return isValid;
   }
 
-  // preventDefault is called unconditionally — it must fire on the valid path too,
-  // otherwise the browser navigates away before showSuccess() and form.reset() can run.
+  // Always prevent default so the page never navigates away.
+  // Invalid path shows errors; valid path resets the form and shows the confirmation.
   form.addEventListener('submit', function(event) {
-    event.preventDefault();
-    if (validateForm()) {
-      showSuccess();
-      form.reset();
-    } else {
-      hideSuccess();
+    if (!validateForm()) {
+      event.preventDefault();
+      return;
     }
+
+    event.preventDefault();
+    form.reset();
+    showSuccessMessage();
   });
 });

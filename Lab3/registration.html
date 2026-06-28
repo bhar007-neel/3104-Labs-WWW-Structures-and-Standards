@@ -42,7 +42,7 @@
           <p class="eyebrow">Contact form</p>
           <h2 id="form-title">Registration details</h2>
         </div>
-        <form action="index.html" method="get" class="registration-form">
+        <form action="index.html" method="get" class="registration-form" novalidate>
           <fieldset class="form-fieldset">
             <legend>Personal information</legend>
             <div class="form-grid">
@@ -110,9 +110,7 @@
             <p class="form-note">By submitting, you agree that this form will be used to match you with the right registration option.</p>
             <button type="submit" class="button button-primary">Submit registration</button>
           </div>
-          <div id="form-success" class="form-success" role="status" hidden>
-            Thanks — your registration has been received. Welcome to Uranus Fitness!
-          </div>
+          <div class="form-message" aria-live="polite" aria-atomic="true"></div>
         </form>
       </section>
     </main>
