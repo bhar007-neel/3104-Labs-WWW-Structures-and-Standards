@@ -435,6 +435,18 @@ footer {
   margin-top: 0.5rem;
 }
 
+/* Form success message */
+.form-success {
+  color: #0f4c5c;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.85rem 1rem;
+  background: rgba(125, 211, 252, 0.2);
+  border: 1px solid rgba(15, 76, 92, 0.3);
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+}
+
 /* Accordion FAQ */
 .accordion {
   margin-top: 1.5rem;
