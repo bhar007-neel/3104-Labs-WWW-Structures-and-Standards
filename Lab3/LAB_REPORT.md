@@ -7,7 +7,7 @@
   - David Gvozdyev - 300308910
   - Liam Geraghty - 300356748
   - Neelman Bhardwaj - 300389998
-- **Date Submitted:** [Date]
+- **Date Submitted:** 2026-06-28
 
 ---
 
@@ -331,7 +331,11 @@ This pattern ensures:
 
 ## Testing and Debugging Process
 
+To test the website, we followed the lab requirements and checked each page in a modern browser. We verified that all internal navigation links worked correctly, the shared CSS loaded on every page, and the relevant JavaScript files loaded on the pages that used them.
 
+We also tested all interactive elements, including the welcome modal, accordion, schedule filters and sort control, and registration form. The form was tested with both valid and invalid input to confirm that invalid submissions were blocked and that success feedback appeared only when all fields were correct.
+
+Finally, we checked the browser console for JavaScript errors, used developer tools to inspect DOM updates, tested the site at desktop, tablet, and mobile widths, confirmed keyboard navigation and visible focus states, and validated the HTML and CSS with appropriate validation tools.
 
 ---
 
@@ -352,9 +356,10 @@ This pattern ensures:
 - [x] The website was tested in desktop, tablet, and mobile widths.
 - [x] HTML, CSS, and JavaScript files were checked using appropriate validation or debugging tools.
 
-
 ---
 
 ## Reflection
 
+The main problems we encountered were making the interactive features work reliably and keeping the form validation clear for users. These were solved by breaking the code into small helper functions, using `DOMContentLoaded` before attaching event listeners, and re-rendering dynamic content like the schedule table from an array of objects instead of hardcoding it.
 
+Another challenge was handling invalid form input without confusing the user. We solved this by adding inline error messages, checking each field separately, and only showing the success message when all required inputs were valid.
