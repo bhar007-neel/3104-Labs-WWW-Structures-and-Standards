@@ -17,7 +17,7 @@
           <li><a href="index.html">Home</a></li>
           <li><a href="about.html">About</a></li>
           <li><a href="schedule.html">Schedule</a></li>
-          <li><a href="registration.html" aria-current="page">Registration</a></li>
+          <li><a href="registration.html">Registration</a></li>
         </ul>
       </nav>
     </header>
@@ -73,14 +73,14 @@
 
           <fieldset class="form-fieldset">
             <legend>Membership selection</legend>
-            <div class="form-group">
-              <span class="form-label">Choose a plan</span>
+            <fieldset class="form-group">
+              <legend class="form-label">Choose a plan</legend>
               <div class="radio-group">
                 <label><input type="radio" name="tier" value="beginner" required> Beginner</label>
                 <label><input type="radio" name="tier" value="intermediate"> Intermediate</label>
                 <label><input type="radio" name="tier" value="advanced"> Advanced</label>
               </div>
-            </div>
+            </fieldset>
             <div class="form-grid">
               <div class="form-group">
                 <label for="contact-method">Preferred contact method</label>
@@ -120,6 +120,7 @@
     <footer>
       <p>&copy; 2026 CSI 3140 Lab 3</p>
     </footer>
+    <script src="script.js" defer></script>
     <script src="registration.js"></script>
   </body>
 </html>

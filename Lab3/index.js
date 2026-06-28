@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
+  // Only show the modal on the user's first visit to the site.
   const modalShown = localStorage.getItem('welcomeModalShown');
 
   if (!modalShown) {
+    // Build the modal DOM structure entirely in JavaScript.
     const modal = document.createElement('div');
     modal.className = 'welcome-modal';
 
@@ -17,11 +19,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const button = document.createElement('button');
     button.className = 'welcome-modal-button';
     button.textContent = 'Get Started';
+
+    // Dismiss the modal and record the visit so it does not appear again.
     button.addEventListener('click', function() {
       modal.classList.add('hidden');
       localStorage.setItem('welcomeModalShown', 'true');
     });
 
+    // Assemble and inject the modal into the page.
     content.appendChild(heading);
     content.appendChild(paragraph);
     content.appendChild(button);

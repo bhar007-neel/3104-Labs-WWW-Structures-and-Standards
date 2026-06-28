@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+  // Cache all form inputs once so they don't need to be queried on every validation run.
   const form = document.querySelector('.registration-form');
   const fullNameInput = document.getElementById('full-name');
   const emailInput = document.getElementById('email');
@@ -10,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const aboutTextarea = document.getElementById('about');
   const successMessage = document.getElementById('form-success');
 
+  // Creates a styled error div with the given message text.
   function createErrorMessage(fieldName) {
     const errorDiv = document.createElement('div');
     errorDiv.className = 'form-error';
@@ -17,24 +19,37 @@ document.addEventListener('DOMContentLoaded', function() {
     return errorDiv;
   }
 
+  // Removes all existing error messages before each validation run.
   function clearErrors() {
     const existingErrors = document.querySelectorAll('.form-error');
     existingErrors.forEach(error => error.remove());
   }
 
+  // Reveals the success banner after a valid submission.
   function showSuccess() {
     successMessage.removeAttribute('hidden');
   }
 
+  // Re-hides the success banner if the user submits again with errors.
   function hideSuccess() {
     successMessage.setAttribute('hidden', '');
   }
 
+  // Returns true if the email matches a basic format: characters@domain.tld
   function validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
 
+  // Phone must contain at least 10 characters made up of digits, spaces, dashes,
+  // parentheses, or a leading +. Accepts formats like 613-123-4567 and +1 613 123 4567.
+  function validatePhone(phone) {
+    const phoneRegex = /^\+?[\d\s\-().]{10,}$/;
+    return phoneRegex.test(phone);
+  }
+
+  // Runs all field checks, appends errors next to failing fields, and returns
+  // true only when every field passes.
   function validateForm() {
     clearErrors();
     let isValid = true;
@@ -62,6 +77,10 @@ document.addEventListener('DOMContentLoaded', function() {
       const error = createErrorMessage('Please enter your phone number.');
       phoneInput.parentElement.appendChild(error);
       isValid = false;
+    } else if (!validatePhone(phoneInput.value.trim())) {
+      const error = createErrorMessage('Please enter a valid phone number (at least 10 digits).');
+      phoneInput.parentElement.appendChild(error);
+      isValid = false;
     }
 
     // Validate age selection
@@ -71,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
       isValid = false;
     }
 
-    // Validate membership tier selection
+    // Validate membership tier — checks that at least one radio button is selected.
     const tierSelected = Array.from(tierRadios).some(radio => radio.checked);
     if (!tierSelected) {
       const tierContainer = document.querySelector('.radio-group');
@@ -104,6 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
     return isValid;
   }
 
+  // preventDefault is called unconditionally — it must fire on the valid path too,
+  // otherwise the browser navigates away before showSuccess() and form.reset() can run.
   form.addEventListener('submit', function(event) {
     event.preventDefault();
     if (validateForm()) {

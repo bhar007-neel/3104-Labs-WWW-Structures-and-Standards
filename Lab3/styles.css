@@ -145,6 +145,11 @@ main {
   background: rgba(255, 255, 255, 0.55);
 }
 
+.filter-button.active {
+  background: #10212b;
+  color: #fff;
+}
+
 /* Card and content panel layouts */
 .hero-visual {
   background: linear-gradient(180deg, rgba(16, 33, 43, 0.16), rgba(16, 33, 43, 0.04));
