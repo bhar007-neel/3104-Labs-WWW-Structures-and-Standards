@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "Beginner Plan",
+    "duration": "2 weeks",
+    "style": "Machine-assisted exercises",
+    "price": 49,
+    "level": "beginner",
+    "description": "Best for new members who want guided practice and safer pacing."
+  },
+  {
+    "id": 2,
+    "name": "Intermediate Plan",
+    "duration": "5 weeks",
+    "style": "Free weight exercises",
+    "price": 59,
+    "level": "intermediate",
+    "description": "Best for members who already know basic gym movements and want more structure."
+  },
+  {
+    "id": 3,
+    "name": "Advanced Plan",
+    "duration": "8 weeks",
+    "style": "Compound lifts + diet plans",
+    "price": 69,
+    "level": "advanced",
+    "description": "Best for experienced members who want heavier training and more detailed planning."
+  }
+]

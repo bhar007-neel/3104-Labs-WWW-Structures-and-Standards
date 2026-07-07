@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration - Uranus Fitness</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Main navigation" class="site-nav">
+        <a href="index.html" class="brand">
+          <img src="img/logo.png" alt="Uranus Fitness Logo" class="banner-logo">
+          <span>Uranus Fitness</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="schedule.html">Schedule</a></li>
+          <li><a href="registration.html">Registration</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="registration-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Registration</p>
+          <h1 id="registration-title">Send your details and we’ll match you with the right plan.</h1>
+          <p>
+            Use the form below to register for Uranus Fitness. The layout is designed for clear labels,
+            readable spacing, and keyboard-friendly interaction on any screen size.
+          </p>
+        </div>
+        <div class="hero-visual">
+          <img src="img/old_guypng.png" alt="A member exercising in the gym" class="hero-img">
+        </div>
+      </section>
+
+      <section class="feature-panel" aria-labelledby="form-title">
+        <div class="section-heading">
+          <p class="eyebrow">Contact form</p>
+          <h2 id="form-title">Registration details</h2>
+        </div>
+        <form action="index.html" method="get" class="registration-form" novalidate>
+          <fieldset class="form-fieldset">
+            <legend>Personal information</legend>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="full-name">Full name</label>
+                <input type="text" id="full-name" name="full-name" autocomplete="name" required>
+              </div>
+              <div class="form-group">
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email" autocomplete="email" required>
+              </div>
+              <div class="form-group">
+                <label for="phone">Phone number</label>
+                <input type="tel" id="phone" name="phone" autocomplete="tel">
+              </div>
+              <div class="form-group">
+                <label for="age">Age range</label>
+                <select id="age" name="age" required>
+                  <option value="">Select an option</option>
+                  <option value="18-25">18-25</option>
+                  <option value="26-35">26-35</option>
+                  <option value="36-45">36-45</option>
+                  <option value="46+">46+</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <legend>Membership selection</legend>
+            <fieldset class="form-group">
+              <legend class="form-label">Choose a plan</legend>
+              <div class="radio-group">
+                <label><input type="radio" name="tier" value="beginner" required> Beginner</label>
+                <label><input type="radio" name="tier" value="intermediate"> Intermediate</label>
+                <label><input type="radio" name="tier" value="advanced"> Advanced</label>
+              </div>
+            </fieldset>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="contact-method">Preferred contact method</label>
+                <select id="contact-method" name="contact-method">
+                  <option value="">Select a contact method…</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Phone</option>
+                  <option value="text">Text message</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="start-date">Preferred start date</label>
+                <input type="date" id="start-date" name="start-date">
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <legend>About you</legend>
+            <div class="form-group">
+              <label for="about">Tell us about your goals</label>
+              <textarea id="about" name="about" rows="5" placeholder="What do you want to focus on?"></textarea>
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <p class="form-note">By submitting, you agree that this form will be used to match you with the right registration option.</p>
+            <button type="submit" class="button button-primary">Submit registration</button>
+          </div>
+          <div class="form-message" aria-live="polite" aria-atomic="true"></div>
+        </form>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 CSI 3140 Lab 3</p>
+    </footer>
+    <script src="script.js" defer></script>
+    <script src="registration.js"></script>
+  </body>
+</html>

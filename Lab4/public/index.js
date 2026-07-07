@@ -1,0 +1,36 @@
+document.addEventListener('DOMContentLoaded', function() {
+  // Only show the modal on the user's first visit to the site.
+  const modalShown = localStorage.getItem('welcomeModalShown');
+
+  if (!modalShown) {
+    // Build the modal DOM structure entirely in JavaScript.
+    const modal = document.createElement('div');
+    modal.className = 'welcome-modal';
+
+    const content = document.createElement('div');
+    content.className = 'welcome-modal-content';
+
+    const heading = document.createElement('h2');
+    heading.textContent = '👋 Welcome to Uranus Fitness!';
+
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'Start your fitness journey today and become part of our community.';
+
+    const button = document.createElement('button');
+    button.className = 'welcome-modal-button';
+    button.textContent = 'Get Started';
+
+    // Dismiss the modal and record the visit so it does not appear again.
+    button.addEventListener('click', function() {
+      modal.classList.add('hidden');
+      localStorage.setItem('welcomeModalShown', 'true');
+    });
+
+    // Assemble and inject the modal into the page.
+    content.appendChild(heading);
+    content.appendChild(paragraph);
+    content.appendChild(button);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+  }
+});

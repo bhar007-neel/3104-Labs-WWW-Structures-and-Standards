@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "fullName": "Ava Martin",
+    "email": "ava.martin@example.com",
+    "phone": "613-555-0101",
+    "ageRange": "26-35",
+    "tier": "beginner",
+    "planId": 1,
+    "contactMethod": "email",
+    "startDate": "2026-07-15",
+    "about": "Wants a simple routine to get back into training."
+  },
+  {
+    "id": 2,
+    "fullName": "Noah Chen",
+    "email": "noah.chen@example.com",
+    "phone": "613-555-0112",
+    "ageRange": "18-25",
+    "tier": "intermediate",
+    "planId": 2,
+    "contactMethod": "text",
+    "startDate": "2026-07-20",
+    "about": "Prefers free weights and wants a more structured plan."
+  },
+  {
+    "id": 3,
+    "fullName": "Mia Patel",
+    "email": "mia.patel@example.com",
+    "phone": "613-555-0133",
+    "ageRange": "36-45",
+    "tier": "advanced",
+    "planId": 3,
+    "contactMethod": "phone",
+    "startDate": "2026-07-25",
+    "about": "Looking for heavier training and diet guidance."
+  },
+  {
+    "id": 4,
+    "fullName": "Test User",
+    "email": "test.user@example.com",
+    "phone": "613-555-0199",
+    "ageRange": "26-35",
+    "tier": "beginner",
+    "planId": 1,
+    "contactMethod": "email",
+    "startDate": "2026-07-10",
+    "about": "Testing the registration flow."
+  }
+]

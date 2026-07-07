@@ -1,0 +1,443 @@
+openapi: 3.0.3
+info:
+  title: Uranus Fitness Registrations API
+  description: REST API for viewing plans and managing registrations for training plans.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/status:
+    get:
+      summary: Check API status
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: Lab 4 API is running
+  /api/plans:
+    get:
+      summary: Get all plans
+      responses:
+        '200':
+          description: List of plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plan'
+              example:
+                - id: 1
+                  name: Beginner Plan
+                  duration: 2 weeks
+                  style: Machine-assisted exercises
+                  price: 49
+                  level: beginner
+                  description: Best for new members who want guided practice and safer pacing.
+                - id: 2
+                  name: Intermediate Plan
+                  duration: 5 weeks
+                  style: Free weight exercises
+                  price: 59
+                  level: intermediate
+                  description: Best for members who already know basic gym movements and want more structure.
+                - id: 3
+                  name: Advanced Plan
+                  duration: 8 weeks
+                  style: Compound lifts + diet plans
+                  price: 69
+                  level: advanced
+                  description: Best for experienced members who want heavier training and more detailed planning.
+  /api/plans/{id}:
+    get:
+      summary: Get one plan by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A plan record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+              example:
+                id: 1
+                name: Beginner Plan
+                duration: 2 weeks
+                style: Machine-assisted exercises
+                price: 49
+                level: beginner
+                description: Best for new members who want guided practice and safer pacing.
+        '404':
+          description: Plan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Plan not found.
+  /api/registrations:
+    get:
+      summary: Get all registrations
+      responses:
+        '200':
+          description: List of registrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Registration'
+              example:
+                - id: 1
+                  fullName: Ava Martin
+                  email: ava.martin@example.com
+                  phone: 613-555-0101
+                  ageRange: 26-35
+                  tier: beginner
+                  planId: 1
+                  contactMethod: email
+                  startDate: '2026-07-15'
+                  about: Wants a simple routine to get back into training.
+    post:
+      summary: Create a registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationInput'
+            example:
+              fullName: Jordan Lee
+              email: jordan.lee@example.com
+              phone: 613-555-0144
+              ageRange: 18-25
+              tier: beginner
+              contactMethod: email
+              startDate: '2026-07-30'
+              about: Looking for a beginner program and an easy first month.
+      responses:
+        '201':
+          description: Registration created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registration'
+              example:
+                id: 5
+                fullName: Jordan Lee
+                email: jordan.lee@example.com
+                phone: 613-555-0144
+                ageRange: 18-25
+                tier: beginner
+                planId: 1
+                contactMethod: email
+                startDate: '2026-07-30'
+                about: Looking for a beginner program and an easy first month.
+        '400':
+          description: Invalid registration data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: fullName, email, phone, ageRange, tier, contactMethod, startDate, and about are required.
+  /api/registrations/{id}:
+    get:
+      summary: Get one registration by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Registration record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registration'
+              example:
+                id: 1
+                fullName: Ava Martin
+                email: ava.martin@example.com
+                phone: 613-555-0101
+                ageRange: 26-35
+                tier: beginner
+                planId: 1
+                contactMethod: email
+                startDate: '2026-07-15'
+                about: Wants a simple routine to get back into training.
+        '404':
+          description: Registration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Registration not found.
+    put:
+      summary: Replace a registration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationInput'
+            example:
+              fullName: Ava Martin
+              email: ava.martin@example.com
+              phone: 613-555-0101
+              ageRange: 26-35
+              tier: advanced
+              contactMethod: phone
+              startDate: '2026-08-01'
+              about: Switching to a more advanced training plan.
+      responses:
+        '200':
+          description: Registration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registration'
+              example:
+                id: 1
+                fullName: Ava Martin
+                email: ava.martin@example.com
+                phone: 613-555-0101
+                ageRange: 26-35
+                tier: advanced
+                planId: 3
+                contactMethod: phone
+                startDate: '2026-08-01'
+                about: Switching to a more advanced training plan.
+        '400':
+          description: Invalid registration data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: fullName, email, phone, ageRange, tier, contactMethod, startDate, and about are required.
+        '404':
+          description: Registration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Registration not found.
+    patch:
+      summary: Update part of a registration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationPatch'
+            example:
+              contactMethod: text
+              about: Prefer text updates after signup.
+      responses:
+        '200':
+          description: Registration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Registration'
+              example:
+                id: 1
+                fullName: Ava Martin
+                email: ava.martin@example.com
+                phone: 613-555-0101
+                ageRange: 26-35
+                tier: beginner
+                planId: 1
+                contactMethod: text
+                startDate: '2026-07-15'
+                about: Prefer text updates after signup.
+        '400':
+          description: Invalid registration data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Invalid tier value.
+        '404':
+          description: Registration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Registration not found.
+    delete:
+      summary: Delete a registration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Registration deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  registration:
+                    $ref: '#/components/schemas/Registration'
+              example:
+                message: Registration deleted.
+                registration:
+                  id: 1
+                  fullName: Ava Martin
+                  email: ava.martin@example.com
+                  phone: 613-555-0101
+                  ageRange: 26-35
+                  tier: beginner
+                  planId: 1
+                  contactMethod: email
+                  startDate: '2026-07-15'
+                  about: Wants a simple routine to get back into training.
+        '404':
+          description: Registration not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Registration not found.
+components:
+  schemas:
+    Plan:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        duration:
+          type: string
+        style:
+          type: string
+        price:
+          type: number
+        level:
+          type: string
+        description:
+          type: string
+    Registration:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        ageRange:
+          type: string
+        tier:
+          type: string
+        planId:
+          type: integer
+        contactMethod:
+          type: string
+        startDate:
+          type: string
+          format: date
+        about:
+          type: string
+    RegistrationInput:
+      type: object
+      required:
+        - fullName
+        - email
+        - phone
+        - ageRange
+        - tier
+        - contactMethod
+        - startDate
+        - about
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        ageRange:
+          type: string
+        tier:
+          type: string
+          description: Must match one of the available plan levels.
+          enum: [beginner, intermediate, advanced]
+        contactMethod:
+          type: string
+        startDate:
+          type: string
+          format: date
+        about:
+          type: string
+    RegistrationPatch:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        ageRange:
+          type: string
+        tier:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        contactMethod:
+          type: string
+        startDate:
+          type: string
+          format: date
+        about:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
