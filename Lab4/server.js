@@ -10,7 +10,7 @@ const openApiDocument = YAML.load("./api-docs/openapi.yaml");
 
 // Core middleware for JSON payloads and static front-end files.
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static("public")); // when a browser requests a file, it will look in the public folder first
 
 // Serve the API documentation through Swagger UI.
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
