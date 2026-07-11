@@ -46,5 +46,17 @@
     "contactMethod": "email",
     "startDate": "2026-07-10",
     "about": "Testing the registration flow."
+  },
+  {
+    "id": 5,
+    "fullName": "Neelmani Bhardwaj",
+    "email": "bhardwaj009@gmail.com",
+    "phone": "2345672234",
+    "ageRange": "18-25",
+    "tier": "beginner",
+    "planId": 1,
+    "contactMethod": "email",
+    "startDate": "2026-07-25",
+    "about": "hello"
   }
 ]
