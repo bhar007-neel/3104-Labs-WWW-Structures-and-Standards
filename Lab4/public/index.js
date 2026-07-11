@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Only show the modal on the user's first visit to the site.
   const modalShown = localStorage.getItem('welcomeModalShown');
+  
+  //localStorage stores small text values in the browser.It stays available even after:
+  //  Refreshing the page
+  //   Closing the tab
+  //    Reopening the browser
 
   if (!modalShown) {
     // Build the modal DOM structure entirely in JavaScript.

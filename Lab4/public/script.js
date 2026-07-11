@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', highlightActiveNavLink);
  */
 function highlightActiveNavLink() {
   var currentFile = window.location.pathname.split('/').pop() || 'index.html';
-  var navLinks = document.querySelectorAll('.nav-links a');
+  var navLinks = document.querySelectorAll('.nav-links a'); //Find every <a> inside an element with class nav-links.
 
   navLinks.forEach(function (link) {
     if (link.getAttribute('href') === currentFile) {
