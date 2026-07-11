@@ -58,5 +58,17 @@
     "contactMethod": "email",
     "startDate": "2026-07-25",
     "about": "hello"
+  },
+  {
+    "id": 6,
+    "fullName": "Postman Test User",
+    "email": "postman.test@example.com",
+    "phone": "613-555-0188",
+    "ageRange": "18-25",
+    "tier": "beginner",
+    "planId": 1,
+    "contactMethod": "email",
+    "startDate": "2026-08-15",
+    "about": "Temporary registration created for Lab 4 API testing."
   }
 ]
