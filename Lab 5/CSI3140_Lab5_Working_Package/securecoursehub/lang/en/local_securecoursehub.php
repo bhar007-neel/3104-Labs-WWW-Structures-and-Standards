@@ -1,0 +1,66 @@
+<?php
+// English language strings for Secure Course Hub.
+
+defined('MOODLE_INTERNAL') || die();
+
+$string['pluginname'] = 'Secure Course Hub';
+$string['securecoursehub'] = 'Secure Course Hub';
+$string['myrequests'] = 'My requests';
+$string['courserequests'] = 'Course request queue';
+$string['createrequestheading'] = 'Create a new request';
+$string['editrequestheading'] = 'Edit request';
+$string['title'] = 'Title';
+$string['description'] = 'Description';
+$string['status'] = 'Status';
+$string['response'] = 'Teacher response';
+$string['student'] = 'Student';
+$string['created'] = 'Created';
+$string['modified'] = 'Modified';
+$string['actions'] = 'Actions';
+$string['create'] = 'Create request';
+$string['savechanges'] = 'Save changes';
+$string['cancel'] = 'Cancel';
+$string['edit'] = 'Edit';
+$string['delete'] = 'Delete';
+$string['update'] = 'Update';
+$string['filter'] = 'Filter';
+$string['allstatuses'] = 'All statuses';
+$string['statusopen'] = 'Open';
+$string['statusinprogress'] = 'In progress';
+$string['statusresolved'] = 'Resolved';
+$string['norequests'] = 'No requests were found.';
+$string['currentuser'] = 'Signed in as {$a}';
+$string['requestcreated'] = 'The request was created.';
+$string['requestupdated'] = 'The request was updated.';
+$string['requestdeleted'] = 'The request was deleted.';
+$string['teacherupdatecomplete'] = 'The request status and response were updated.';
+$string['validationerror'] = 'The submitted data is invalid.';
+$string['titleinvalid'] = 'The title is required and must be 255 characters or fewer.';
+$string['descriptioninvalid'] = 'The description is required and must be 2000 characters or fewer.';
+$string['responseinvalid'] = 'The teacher response must be 500 characters or fewer.';
+$string['statusinvalid'] = 'The selected status is invalid.';
+$string['requestnotopen'] = 'Students may edit or delete only open requests.';
+$string['notowner'] = 'You cannot access or modify another student’s request.';
+$string['courseismatch'] = 'The request does not belong to this course.';
+$string['notenrolled'] = 'You are not enrolled in this course.';
+$string['invalidaction'] = 'The requested action is not supported.';
+$string['invalidjson'] = 'The server received invalid JSON.';
+$string['notfound'] = 'The requested record was not found.';
+$string['accessdenied'] = 'Access denied.';
+$string['sessionexpired'] = 'Your session has expired. Sign in again and retry.';
+$string['servererror'] = 'The operation could not be completed.';
+$string['jsnetworkerror'] = 'The request could not reach the server.';
+$string['confirmdelete'] = 'Delete this open request?';
+$string['privacy:metadata:local_securecoursehub'] = 'Stores course help requests created by users.';
+$string['privacy:metadata:local_securecoursehub:courseid'] = 'The Moodle course connected to the request.';
+$string['privacy:metadata:local_securecoursehub:userid'] = 'The user who created the request.';
+$string['privacy:metadata:local_securecoursehub:title'] = 'The request title.';
+$string['privacy:metadata:local_securecoursehub:description'] = 'The request description.';
+$string['privacy:metadata:local_securecoursehub:status'] = 'The workflow status.';
+$string['privacy:metadata:local_securecoursehub:response'] = 'The teacher response.';
+$string['privacy:metadata:local_securecoursehub:timecreated'] = 'When the request was created.';
+$string['privacy:metadata:local_securecoursehub:timemodified'] = 'When the request was last changed.';
+
+$string['securecoursehub:viewown'] = 'View Secure Course Hub and own requests';
+$string['securecoursehub:createrequest'] = 'Create course requests';
+$string['securecoursehub:managecourserequests'] = 'Manage requests in an authorized course';
