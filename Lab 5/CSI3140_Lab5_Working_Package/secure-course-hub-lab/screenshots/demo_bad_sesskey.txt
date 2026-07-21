@@ -1,0 +1,13 @@
+await fetch('/local/securecoursehub/ajax.php', {
+  method: 'POST',
+  credentials: 'same-origin',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    action: 'update_status',
+    id: 1,                    // any real record id from the queue
+    status: 'resolved',
+    sesskey: 'forged0000'     // deliberately wrong
+  })
+}).then(r => r.json().then(j => console.log(r.status, j)));
+
+in dev tools console after typing allow pasting in console

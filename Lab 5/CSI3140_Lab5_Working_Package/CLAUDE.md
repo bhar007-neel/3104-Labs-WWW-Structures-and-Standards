@@ -1,0 +1,1 @@
+Read SPEC.md and implement it fully. SPEC.md overrides everything else

@@ -1,0 +1,137 @@
+Secure Course Hub - automated acceptance and security tests
+Target: http://127.0.0.1:8080  (local development instance)
+Note:   session cookies and sesskey values are redacted as <redacted>.
+============================================================
+Moodle: 4.5.4 (Build: 20250414)
+PHP:    8.1.32
+Seeded learner1 request id: 1
+
+[01] Unauthenticated GET of index.php
+     role     : guest / anonymous
+     expected : 302 or 303 redirect to login, no data
+     actual   : HTTP 303 (redirect to login, no plugin data in body)
+     result   : PASS
+
+[02] Unauthenticated POST to ajax.php
+     role     : guest / anonymous
+     expected : 401 rejected before any write
+     actual   : HTTP 401 {"success":false,"error":"Your session has expired. Sign in again and retry."}
+     detail   : row count 6 -> 6
+     result   : PASS
+
+[03] learner1 creates a valid request
+     role     : student (learner1)
+     expected : 200, owner=learner1, course=2, status=open, timestamps set
+     actual   : HTTP 200 {"success":true,"message":"The request was created.","request":{"id":7,"courseid":2,"title":"Projector not working in lab","description":"The projector in room A stays blank.","status":"open","statuslabel":"Open","response":"","timecreated":1784666696,"timemodified":1784666696,"timemodifiedformatted":"Tuesday, 21 July 2026, 9:44 PM"}}
+     detail   : stored row (userid|courseid|status|created|modified) = 4|2|open|1|1
+     result   : PASS
+
+[04] Create with missing title
+     role     : student (learner1)
+     expected : 400 safe validation error, no row written
+     actual   : HTTP 400 {"success":false,"error":"The title is required and must be 80 characters or fewer."}
+     detail   : row count 7 -> 7
+     result   : PASS
+
+[05] Create with a 100-character title (limit is 80)
+     role     : student (learner1)
+     expected : 400 rejected, no row written
+     actual   : HTTP 400 {"success":false,"error":"The title is required and must be 80 characters or fewer."}
+     detail   : row count 7 -> 7
+     result   : PASS
+
+[06] learner1 lists own requests
+     role     : student (learner1)
+     expected : 200, exactly the 7 records owned by learner1
+     actual   : HTTP 200 (list of 7 own requests)
+     detail   : returned 7, owned 7
+     result   : PASS
+
+[07] learner2 lists own requests
+     role     : student (learner2)
+     expected : 200, learner1's records absent
+     actual   : HTTP 200 {"success":true,"requests":[]}
+     detail   : searched for learner1 request id 1 and its title
+     result   : PASS
+
+[08] learner2 updates and deletes learner1's record by id
+     role     : student (learner2)
+     expected : 403 on both, record unchanged
+     actual   : HTTP 403 {"success":false,"error":"You cannot access or modify a request that belongs to another user."}
+     detail   : update HTTP 403; record before='Cannot open week 3 lab handout|inprogress' after='Cannot open week 3 lab handout|inprogress'
+     result   : PASS
+
+[09] learner1 calls update_status directly (teacher-only)
+     role     : student (learner1)
+     expected : 403, status unchanged
+     actual   : HTTP 403 {"success":false,"error":"You do not have permission to perform this action."}
+     detail   : status inprogress -> inprogress
+     result   : PASS
+
+[10] staff1 lists every request in the course
+     role     : editing teacher (staff1)
+     expected : 200, all 7 course records
+     actual   : HTTP 200 (queue of 7 requests)
+     detail   : returned 7 of 7
+     result   : PASS
+
+[11] staff1 sets status to inprogress
+     role     : editing teacher (staff1)
+     expected : 200, stored status becomes inprogress
+     actual   : HTTP 200 {"success":true,"message":"The request status was updated.","request":{"id":1,"courseid":2,"title":"Cannot open week 3 lab handout","description":"The PDF link on the week 3 page returns a not-found page for me. Could the file be re-uploaded?","status":"inprogress","statuslabel":"In progress","response":"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy","timecreated":1784663192,"timemodified":1784666705,"timemodifiedformatted":"Tuesday, 21 July 2026, 9:45 PM","userid":4,"ownername":"Alex StudentA"}}
+     detail   : stored status is now 'inprogress'
+     result   : PASS
+
+[12] staff1 submits a 501-character response
+     role     : editing teacher (staff1)
+     expected : 400 rejected, nothing stored
+     actual   : HTTP 400 {"success":false,"error":"The response must be 500 characters or fewer."}
+     detail   : stored response length is 500
+     result   : PASS
+
+[13] staff1 submits a 500-character response
+     role     : editing teacher (staff1)
+     expected : 200 accepted, 500 characters stored
+     actual   : HTTP 200 (success, 500-character response stored)
+     detail   : stored response length is 500
+     result   : PASS
+
+[14] State change with missing sesskey, then with a wrong sesskey
+     role     : editing teacher (staff1)
+     expected : 403 both times, status unchanged
+     actual   : HTTP 403 {"success":false,"error":"The security token was missing or invalid. Reload the page and try again."}
+     detail   : missing-sesskey HTTP 403; status inprogress -> inprogress
+     result   : PASS
+
+[15] Injected script string is stored and rendered as text
+     role     : student (learner1)
+     expected : stored verbatim; page shows escaped entities, no executable tag
+     actual   : HTTP 200 (request created; page re-fetched and inspected)
+     detail   : escaped occurrences=3, raw executable occurrences=0
+     result   : PASS
+
+[16] Operate on nonexistent record id 99999
+     role     : editing teacher (staff1)
+     expected : 404 safe not-found, no internal detail
+     actual   : HTTP 404 {"success":false,"error":"The requested record was not found."}
+     detail   : response checked for SQL text and server paths
+     result   : PASS
+
+[17] Status value outside the whitelist ('deleted')
+     role     : editing teacher (staff1)
+     expected : 400 rejected, status unchanged
+     actual   : HTTP 400 {"success":false,"error":"The selected status is invalid."}
+     detail   : status inprogress -> inprogress
+     result   : PASS
+
+============================================================
+Automated tests: 17 passed, 0 failed, 17 total
+
+Manual checks that cannot be automated here (do these in a browser):
+  M1. Screenshot of the running site and the version page.
+  M2. Participants page showing staff1, learner1 and learner2 with their roles.
+  M3. Network tab showing the update_status JSON request and response.
+  M4. Expired-session behaviour: log out in a second tab, then press Update;
+      the page must show the session-expired message and stop.
+  M5. Browser console shows no errors during normal use.
+============================================================
