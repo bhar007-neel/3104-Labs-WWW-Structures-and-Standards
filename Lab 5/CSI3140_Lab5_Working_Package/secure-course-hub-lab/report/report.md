@@ -69,7 +69,7 @@ documentation (`$CFG->release`, `$CFG->version`, `PHP_VERSION`).
 
 The environment is reproducible: `docker compose up -d` followed by the
 idempotent `setup.sh` (or `setup.ps1`) rebuilds it from nothing, including the
-four synthetic accounts, the demonstration course, the enrolments and two sample
+four synthetic accounts, the demonstration course, the enrolments and the sample
 requests.
 
 The site must be reached at **`127.0.0.1`, not `localhost`**: Moodle compares the
@@ -84,15 +84,16 @@ silent externally" choices.
 
 ### Test accounts (synthetic only)
 
-| Account | Role | Notes |
-|---|---|---|
-| `admin` | Site administrator | Created by the container install variables |
-| `staff1` | Editing teacher | Enrolled in CSI3140-DEMO |
-| `learner1` | Student | Enrolled; owns the seeded requests |
-| `learner2` | Student | Enrolled; owns nothing — the "attacker" account in the tests |
+| Account | Display name | Role | Notes |
+|---|---|---|---|
+| `admin` | — | Site administrator | Created by the container install variables |
+| `staff1` | Sam Teacher | Editing teacher | Enrolled in the demonstration course |
+| `learner1` | Alex StudentA | Student | Enrolled; owns the seeded requests |
+| `learner2` | Blair StudentB | Student | Enrolled; owns nothing — the "attacker" account in the tests |
 
 These map 1:1 to the specification's *administrator / teacher / Student A /
-Student B*. No real name, email or password appears anywhere in the project.
+Student B*. Addresses are `@example.invalid`, a reserved non-routable domain. No
+real name, email or password appears anywhere in the project.
 
 ---
 
@@ -101,37 +102,12 @@ Student B*. No real name, email or password appears anywhere in the project.
 Every request crosses the same layered boundary. Each layer may only *reduce*
 what the request is allowed to do; no layer can grant what an outer layer denied.
 
-> **When exporting to PDF:** if your converter does not render Mermaid, the same
-> diagram is available as a static image at `report/architecture_diagram.svg` —
-> insert it here instead. A text-only fallback follows the diagram either way.
+![Secure Course Hub architecture: browser, Moodle platform (login, session, $USER, course context), authorization layer (capabilities, ownership, sesskey/CSRF), plugin logic (index.php, ajax.php, request_service.php) and the database reached only through the Moodle $DB API.](architecture_diagram.svg)
 
-```mermaid
-flowchart TB
-    B["Browser<br/>index.php form posts · dashboard.js fetch()/JSON"]
+*Figure 0 — the six layers required by the specification: browser, Moodle/PHP,
+authentication/session, authorization/capabilities, plugin logic, and database.*
 
-    subgraph M["Moodle / PHP (Apache, PHP 8.1)"]
-        C["config.php<br/>bootstrap, $CFG, $DB, $USER"]
-        A["Authentication &amp; session layer<br/>require_login() · MoodleSession cookie<br/>server-side session · sesskey (CSRF)"]
-        Z["Authorization layer<br/>context_course::instance()<br/>require_capability() / has_capability()"]
-        P["Plugin logic<br/>index.php · ajax.php<br/>classes/local/request_service.php<br/>validation · ownership · state rules"]
-    end
-
-    D[("MariaDB<br/>mdl_local_securecoursehub_req<br/>via $DB placeholders")]
-
-    B -- "HTTPS/HTTP + session cookie" --> C
-    C --> A
-    A -- "authenticated $USER" --> Z
-    Z -- "capability granted in the course context" --> P
-    P -- "parameterised queries only" --> D
-    D -- "records" --> P
-    P -- "escaped HTML / structured JSON" --> B
-
-    A -. "no session → 302 to login (page) or 401 JSON (endpoint)" .-> B
-    Z -. "capability denied → access denied page or 403 JSON" .-> B
-    P -. "not owner / not open / invalid input → 403 or 400 JSON" .-> B
-```
-
-Text equivalent of the same flow:
+The same flow written out, including every path on which a request is **refused**:
 
 ```
 Browser
@@ -175,7 +151,92 @@ closes that path completely.
 
 ---
 
-## 4. File structure
+## 4. Project structure and why it is organised this way
+
+This section describes the structure **as it actually exists in the repository**,
+not an idealised layout. There are three nested things to keep apart: the working
+repository we develop in, the plugin that is the actual deliverable, and the ZIP
+payload that is submitted.
+
+### 4.1 The working repository
+
+```
+secure-course-hub-lab/
+├── plugin/                     THE DELIVERABLE — becomes local/securecoursehub/
+├── docker-compose.yml          Moodle 4.5 + MariaDB 11.4; plugin mounted read-only at /plugin-src
+├── setup.sh  /  setup.ps1      idempotent environment setup (bash / PowerShell)
+├── setup/seed_testdata.php     CLI script run *inside* the container: accounts, course, enrolments, seed data
+├── tests/
+│   ├── run_security_tests.sh   17 automated acceptance and security checks
+│   ├── demo_csrf.sh            standalone CSRF demonstration for the TA
+│   └── evidence.txt            committed test output (submitted evidence)
+├── report/
+│   ├── report.md               this document
+│   └── architecture_diagram.svg  render-safe copy of the §3 diagram
+├── screenshots/                evidence images
+├── package.sh                  builds the submission ZIP and refuses to build if it finds a secret
+├── build/payload/              staging area written by package.sh — generated, never edited
+├── AUDIT.md                    ordered end-to-end verification procedure
+├── DEMO.md                     script for the TA demonstration
+├── README.md                   developer README for the team (not submitted)
+└── .gitignore                  excludes build/, tests/.tmp/, the ZIP
+```
+
+**Why the plugin sits in its own top-level folder.** `plugin/` contains nothing
+but the component. Everything that exists only to *run or verify* the component —
+Docker, setup scripts, the test harness, the packaging script, the team README —
+lives outside it. That boundary is the whole point:
+
+1. **The deliverable is exactly what Moodle installs.** `plugin/` is copied
+   verbatim to `local/securecoursehub` by both `setup.sh` (into the container)
+   and `package.sh` (into the ZIP). What we develop against, what the tests run
+   against, and what the grader installs are byte-identical, so "it worked on our
+   machine" cannot diverge from "it works in the ZIP".
+2. **Environment material can never leak into the submission.** The lab forbids
+   shipping `config.php`, `moodledata`, database credentials or the Moodle core.
+   None of those things live under `plugin/`, so the packaging step is a *copy of
+   one folder* rather than a delete-list that a human has to remember to keep
+   up to date. Exclusion by construction beats exclusion by discipline.
+3. **The plugin has no dependency on our tooling.** Nothing under `plugin/`
+   references Docker, a container path, or a setup script. It installs on any
+   Moodle 4.5 by copying the folder and visiting Notifications — verified in
+   `AUDIT.md` Phase 4.
+
+**Why the plugin folder is called `plugin/` and not `local/securecoursehub/`.**
+Moodle derives a component's name from its *installed* path, and the frankenstyle
+name `local_securecoursehub` is declared in `version.php`. Keeping a two-level
+`local/securecoursehub/` tree in the repository would add two directories that
+carry no information and put the interesting files two levels deeper in every
+path. The rename happens once, at the single place that produces the installed
+layout, and `package.sh` asserts the ZIP's top level is exactly
+`local report screenshots tests`.
+
+**Why the setup logic is split between a shell script and a PHP script.**
+`setup.sh` / `setup.ps1` handle everything that happens *on the host* (wait for
+the containers, copy the plugin, invoke the Moodle CLI). `setup/seed_testdata.php`
+handles everything that requires *Moodle bootstrapped* — creating users, the
+course, enrolments and sample requests through Moodle's own APIs rather than by
+writing SQL. Seeding through the API means the fixtures obey exactly the same
+validation and password policy as data created through the interface, so the test
+environment cannot drift into a state the real application would refuse.
+
+**Why the tests live outside the plugin.** `tests/run_security_tests.sh` is a
+*black-box* harness: it logs in through Moodle's real login form with `curl` and
+then calls `ajax.php` directly over HTTP with no interface involved. It has no
+access to the plugin's internals, which is deliberate — every rule must hold
+against a hostile client that never loads our JavaScript. Moodle's own PHPUnit
+directory convention (`plugin/tests/`) is for in-process unit tests and would
+have shipped test code to the grader; this harness is neither, so it stays in the
+repository and only its *output* (`tests/evidence.txt`) is submitted.
+
+**Why `build/` exists and is never edited.** `package.sh` stages the payload into
+`build/payload/` before zipping so that the secret scan and the core-file
+assertion run against **the exact tree that will be archived**, not against the
+source tree. Scanning the source and then zipping something else would be a
+check that proves nothing. `build/` is regenerated on every run and is
+`.gitignore`d.
+
+### 4.2 The plugin — installed layout and purpose of each file
 
 ```
 local/securecoursehub/
@@ -199,18 +260,52 @@ local/securecoursehub/
 
 | File | Why it exists |
 |---|---|
-| `version.php` | Identifies the component to Moodle and drives install/upgrade. `version` is bumped whenever `install.xml` changes. |
+| `version.php` | Identifies the component to Moodle and drives install/upgrade. `$plugin->version` is `2026072101` and is bumped whenever `install.xml` changes, because Moodle runs `install.xml` exactly once and ignores later edits without a version bump. |
 | `db/access.php` | Declares the three capabilities at `CONTEXT_COURSE` with default archetypes. Declaration alone grants nothing — each is enforced in code. |
-| `db/install.xml` | Creates `local_securecoursehub_req` with indexes on `courseid` and `userid`. |
+| `db/install.xml` | Creates `local_securecoursehub_req` with indexes on `courseid`, `userid` and the composite `courseid,status`. |
 | `index.php` | The only rendered page. Runs the security chain, then draws the student form, the user's own requests, and — only with the management capability — the course queue. |
-| `ajax.php` | Single JSON endpoint for all six actions. POST only; every action validates the sesskey. |
-| `request_service.php` | The only place that touches the table. Holds validation, ownership, state transitions and timestamps, so no page script can bypass a rule. |
-| `provider.php` | Declares the personal data stored and implements export/deletion. |
-| `dashboard.js` | Sends JSON with `fetch()` and updates the DOM with `textContent`. |
+| `ajax.php` | Single JSON endpoint for all six actions (`create`, `list_own`, `list_course`, `update_own`, `update_status`, `delete`). POST only; every action validates the sesskey. |
+| `classes/local/request_service.php` | The only code in the plugin that touches the table. Holds validation, ownership, state transitions and timestamps, so no page script can bypass a rule. |
+| `classes/privacy/provider.php` | Declares the personal data stored and implements export/deletion for Moodle's Privacy API. |
+| `lang/en/local_securecoursehub.php` | Every user-visible string, including every error message. This is also a security boundary — see §10, "safe errors". |
+| `amd/src/dashboard.js` | Sends JSON with `fetch()` and writes results into the DOM with `textContent`. |
+| `amd/build/dashboard.min.js` | Moodle serves the `build/` copy in production mode; the `src/` copy is only used with caching disabled. Both are shipped and kept identical. |
+| `lib.php` | Implements `local_securecoursehub_extend_navigation_course()` so the hub appears in the course menu — the supported extension point, rather than editing a core navigation file. |
+| `styles.css` | Presentation only; carries no behaviour and no security meaning. |
 
-Separation of concerns is the maintainability argument *and* a security
-argument: because every write funnels through `request_service`, a rule is
-enforced once and cannot be forgotten in a new entry point.
+**Why a service class instead of putting the queries in the pages.** Separation
+of concerns is the maintainability argument, but the security argument is
+stronger: because every write funnels through `request_service`, a rule is
+written once and cannot be forgotten in a new entry point. `index.php` and
+`ajax.php` are two front doors onto the same locked room. If ownership were
+checked in each page instead, adding a third entry point would silently create a
+third place to get it wrong.
+
+**Why `pix/` and `db/services.php` are absent.** The lab's suggested tree lists
+both as optional. `pix/` would hold a plugin icon we do not use, and
+`db/services.php` is only required when Moodle *external functions* are used; we
+implement the JSON path as a plain `ajax.php` endpoint, which the specification
+allows explicitly ("`ajax.php` **or** approved external/AJAX service"). Shipping
+an empty `services.php` would declare an external service that does not exist.
+
+### 4.3 The submitted ZIP
+
+```
+CSI3140_Lab5_Submission.zip
+├── local/securecoursehub/      the complete plugin, including its README.md
+├── report/
+│   ├── report.pdf              this document, exported
+│   └── architecture_diagram.svg
+├── screenshots/                the evidence images and their captions
+└── tests/evidence.txt          automated test output, cookies and sesskeys redacted
+```
+
+`package.sh` builds this and **aborts rather than producing a ZIP** if it finds
+a forbidden filename (`config.php`, `.env`, `*.sql`, `*.log`, `moodledata`), a
+credential-shaped string (a `MoodleSession` value, an assigned `sesskey` literal,
+a Moodle database-password configuration variable, a private key block), a Moodle
+core file, or an unexpected top-level directory. The scanner reads text only — it cannot inspect a PNG, so
+every screenshot is also checked by eye before packaging.
 
 ---
 
@@ -230,8 +325,8 @@ One table, `local_securecoursehub_req` (physically `mdl_local_securecoursehub_re
 | `timecreated` | int(10) | no | Server `time()`, never a client value |
 | `timemodified` | int(10) | no | Server `time()`, updated on every write |
 
-Indexes: `courseid`, `userid`, and a composite `courseid,status` for the teacher
-queue with its status filter.
+Indexes: `courseid_idx`, `userid_idx`, and a composite `course_status_idx` on
+`courseid,status` for the teacher queue with its status filter.
 
 Design notes:
 
@@ -315,7 +410,7 @@ status shown. "Own" means the record's `userid` equals the authenticated user id
 
 | Operation | Unauthenticated | Student (own record) | Student (another's record) | Teacher (course they teach) | Teacher (other course) | Manager |
 |---|---|---|---|---|---|---|
-| Open the page | ❌ 302 → login | ✅ | — | ✅ | ❌ access denied | ✅ |
+| Open the page | ❌ 303 → login | ✅ | — | ✅ | ❌ access denied | ✅ |
 | `create` | ❌ 401 | ✅ | — | ✅ | ❌ 403 | ✅ |
 | `list_own` | ❌ 401 | ✅ own only | ❌ never returned | ✅ own only | ❌ 403 | ✅ |
 | `list_course` | ❌ 401 | ❌ 403 | ❌ 403 | ✅ | ❌ 403 | ✅ |
@@ -381,37 +476,38 @@ page with no reload. Student creation is wired the same way, so a new row appear
 dynamically too. Both forms still work with JavaScript disabled by posting to
 `index.php`, which applies the identical checks.
 
-### Example exchange (captured from the automated run)
+### Example exchange (captured in DevTools — Figure 9)
 
 Request — `POST /local/securecoursehub/ajax.php`, `Content-Type: application/json`:
 
 ```json
 {
   "action": "update_status",
-  "id": 1,
+  "id": 10,
   "status": "inprogress",
   "response": "",
   "sesskey": "<redacted>"
 }
 ```
 
-Response — `200 OK`, `Content-Type: application/json; charset=utf-8`:
+Response — `200 OK`, `Content-Type: application/json; charset=utf-8`,
+`Cache-Control: no-store, no-cache, must-revalidate`:
 
 ```json
 {
   "success": true,
   "message": "The request status was updated.",
   "request": {
-    "id": 1,
+    "id": 10,
     "courseid": 2,
-    "title": "Cannot open week 3 lab handout",
-    "description": "The PDF link on the week 3 page returns a not-found page for me. Could the file be re-uploaded?",
+    "title": "<script>alert(1)</script>",
+    "description": "XSS probe",
     "status": "inprogress",
     "statuslabel": "In progress",
     "response": "",
     "timecreated": 1784662101,
     "timemodified": 1784662542,
-    "timemodifiedformatted": "Tuesday, 21 July 2026, 8:35 PM",
+    "timemodifiedformatted": "Tuesday, 21 July 2026, 10:00 PM",
     "userid": 4,
     "ownername": "Alex StudentA"
   }
@@ -433,6 +529,7 @@ Failure responses use the same shape, so the client has one code path:
 | Missing record | 404 | Shows a neutral not-found message |
 | Validation error | 400 | Shows which rule failed |
 | Missing/invalid sesskey | 403 | Shows "reload the page and try again" |
+| Method other than POST | 405 | Shows a generic failure message |
 
 ### Client-side rules
 
@@ -463,7 +560,7 @@ Failure responses use the same shape, so the client has one code path:
 | `description` | Required, trimmed, ≤ 2000 characters |
 | `response` | Optional, trimmed, ≤ 500 characters |
 | `status` | Must be exactly one of `open`, `inprogress`, `resolved` |
-| `sesskey` | Must match the session's token |
+| `sesskey` | Must be a non-empty string matching the session's token |
 
 Validation runs **before** any write, and a rejected request performs no write at
 all — no partial or half-applied update is possible. Tests 04, 05, 12 and 17
@@ -481,8 +578,9 @@ did not anticipate. Escaping at the point of output is correct in every context.
 - JavaScript: `textContent` / `createElement`, never `innerHTML`.
 
 Test 15 proves the round trip: a request titled `<script>alert(1)</script>` is
-stored with its tags intact, and the rendered page contains
-`&lt;script&gt;alert(1)&lt;/script&gt;` with **zero** executable occurrences.
+stored with its tags intact, and the rendered page contains the escaped form
+(`&lt;script&gt;alert(1)&lt;/script&gt;`) and **zero** executable occurrences.
+Figure 11 shows the same string displayed as literal text in the table.
 
 ### CSRF
 
@@ -490,7 +588,8 @@ Every state-changing request carries a sesskey and the server validates it:
 `confirm_sesskey()` in `ajax.php` for all six actions, `require_sesskey()` for
 every form POST in `index.php`. GET never changes state, and `ajax.php` rejects
 any method other than POST with 405. Test 14 confirms that both a missing and a
-wrong sesskey are refused with 403 and that the stored status is unchanged.
+wrong sesskey are refused with 403 and that the stored status is unchanged;
+Figure 12 shows the same rejection performed by hand from the browser console.
 
 ### Injection prevention
 
@@ -570,12 +669,12 @@ whole-context, per-user and per-user-list granularity.
 
 | Risk | Control implemented | Where | Evidence |
 |---|---|---|---|
-| **Broken access control** (OWASP A01) | Capabilities checked server-side in the *record's own* course context, plus ownership and state rules; UI hiding is never relied upon | `ajax.php` context recomputation; `request_service::require_owner()` / `require_open()` | Tests 08, 09, 10 |
-| **CSRF** (A01/A05) | `sesskey` required and validated on every state-changing request; POST-only endpoint; GET never mutates | `confirm_sesskey()` in `ajax.php`, `require_sesskey()` in `index.php` | Test 14 |
+| **Broken access control** (OWASP A01) | Capabilities checked server-side in the *record's own* course context, plus ownership and state rules; UI hiding is never relied upon | `ajax.php` context recomputation; `request_service::require_owner()` / `require_open()` | Tests 08, 09, 10; Figures 4, 5 |
+| **CSRF** (A01/A05) | `sesskey` required and validated on every state-changing request; POST-only endpoint; GET never mutates | `confirm_sesskey()` in `ajax.php`, `require_sesskey()` in `index.php` | Test 14; Figure 12 |
 | **Injection** (A03) | Moodle `$DB` API with placeholders exclusively; status whitelist; typed `PARAM_*` cleaning | `request_service.php` throughout | Test 17; code review — no SQL concatenation exists |
-| **XSS** (A03) | Escape at output: `s()` / `format_string()` / `html_writer`; `textContent` in JS, never `innerHTML` | `index.php`, `dashboard.js` | Test 15 (1 escaped, 0 executable) |
-| **Identification & authentication failures** (A07) | Moodle's own login/session used; no separate password store; `$USER` from the platform; expired sessions produce 401 and the client stops | `require_login()` on both entry points | Tests 01, 02 |
-| **Security misconfiguration** (A05) | Debug display disabled while developer debugging stays on; site bound to `127.0.0.1`; synthetic credentials only; no core file modified | `seed_testdata.php`, `docker-compose.yml` | Environment section |
+| **XSS** (A03) | Escape at output: `s()` / `format_string()` / `html_writer`; `textContent` in JS, never `innerHTML` | `index.php`, `dashboard.js` | Test 15 (escaped, 0 executable); Figure 11 |
+| **Identification & authentication failures** (A07) | Moodle's own login/session used; no separate password store; `$USER` from the platform; expired sessions produce 401 and the client stops | `require_login()` on both entry points | Tests 01, 02; Figure 3 |
+| **Security misconfiguration** (A05) | Debug display disabled while developer debugging stays on; site bound to `127.0.0.1`; synthetic credentials only; no core file modified | `seed_testdata.php`, `docker-compose.yml` | §2 |
 | **Security logging & monitoring failures** (A09) | Unexpected failures logged locally via `debugging()`; logs contain no passwords, cookies, sesskeys or request text | `ajax.php` catch blocks | Test 16 |
 | **Sensitive data exposure** (A02) | Constant not-found/forbidden messages; owner identity omitted from student responses; secrets scanned out of the ZIP | `to_json_row()`, `package.sh` | Test 16; packaging scan |
 
@@ -583,72 +682,93 @@ whole-context, per-user and per-user-list granularity.
 
 ## 13. Test results
 
-17 automated checks, all passing on a clean instance. The harness logs in through
-the real Moodle login form and then calls `ajax.php` **directly**, with no
-interface involved — the point being that every rule must hold against a hostile
-client. Full output, including exact HTTP codes and response bodies, is in
-`tests/evidence.txt`. Session cookies and sesskeys are redacted there.
+17 automated checks, all passing. The harness logs in through the real Moodle
+login form and then calls `ajax.php` **directly**, with no interface involved —
+the point being that every rule must hold against a hostile client. Full output,
+including exact HTTP codes and response bodies, is in `tests/evidence.txt`.
+Session cookies and sesskeys are redacted there.
 
 | # | Role | Action | Expected | Actual | Result |
 |---|---|---|---|---|---|
-| 01 | anonymous | GET the plugin page | Redirect to login, no data | HTTP 303 to login | **PASS** |
-| 02 | anonymous | POST `create` to `ajax.php` | Rejected before any write | HTTP 401, row count unchanged | **PASS** |
+| 01 | anonymous | GET the plugin page | Redirect to login, no data | HTTP 303 to login, no plugin data in body | **PASS** |
+| 02 | anonymous | POST `create` to `ajax.php` | Rejected before any write | HTTP 401; row count 2 → 2 | **PASS** |
 | 03 | learner1 | `create` a valid request | Owner=learner1, course=2, status=open, timestamps set | HTTP 200; stored row `4\|2\|open\|1\|1` | **PASS** |
-| 04 | learner1 | `create` with an empty title | Safe validation error, no write | HTTP 400, row count unchanged | **PASS** |
-| 05 | learner1 | `create` with a 100-char title | Rejected (limit 80), no write | HTTP 400, row count unchanged | **PASS** |
-| 06 | learner1 | `list_own` | Exactly the caller's records | HTTP 200, 3 of 3 own records | **PASS** |
-| 07 | learner2 | `list_own` | learner1's records absent | HTTP 200, `{"requests":[]}` | **PASS** |
-| 08 | learner2 | `update_own` + `delete` on learner1's record id | 403 both, record unchanged | HTTP 403 + 403, record identical | **PASS** |
-| 09 | learner1 | `update_status` (teacher-only) directly | 403, status unchanged | HTTP 403, status still `open` | **PASS** |
-| 10 | staff1 | `list_course` | All course records | HTTP 200, 3 of 3 | **PASS** |
-| 11 | staff1 | `update_status` → `inprogress` | 200, stored status updated | HTTP 200, stored `inprogress` | **PASS** |
-| 12 | staff1 | 501-character response | Rejected, nothing stored | HTTP 400, length not 501 | **PASS** |
-| 13 | staff1 | 500-character response | Accepted | HTTP 200, length 500 | **PASS** |
-| 14 | staff1 | Missing sesskey, then wrong sesskey | 403 both, data unchanged | HTTP 403 + 403, status unchanged | **PASS** |
-| 15 | learner1 | Create title `<script>alert(1)</script>` | Stored; rendered as text | Stored; 1 escaped, 0 executable | **PASS** |
-| 16 | staff1 | Operate on record id 99999 | Safe 404, no internal detail | HTTP 404, no SQL/paths in body | **PASS** |
-| 17 | staff1 | `status` = `deleted` | 400, status unchanged | HTTP 400, status unchanged | **PASS** |
+| 04 | learner1 | `create` with an empty title | Safe validation error, no write | HTTP 400; row count 3 → 3 | **PASS** |
+| 05 | learner1 | `create` with a 100-char title | Rejected (limit 80), no write | HTTP 400; row count 3 → 3 | **PASS** |
+| 06 | learner1 | `list_own` | Exactly the caller's records | HTTP 200; returned 3, owned 3 | **PASS** |
+| 07 | learner2 | `list_own` | learner1's records absent | HTTP 200 `{"requests":[]}` | **PASS** |
+| 08 | learner2 | `update_own` + `delete` on learner1's record id | 403 both, record unchanged | HTTP 403 + 403; record `Cannot open week 3 lab handout\|open` identical before/after | **PASS** |
+| 09 | learner1 | `update_status` (teacher-only) directly | 403, status unchanged | HTTP 403; status `open` → `open` | **PASS** |
+| 10 | staff1 | `list_course` | All course records | HTTP 200; returned 3 of 3 | **PASS** |
+| 11 | staff1 | `update_status` → `inprogress` | 200, stored status updated | HTTP 200; stored `inprogress` | **PASS** |
+| 12 | staff1 | 501-character response | Rejected, nothing stored | HTTP 400; stored response length still 0 | **PASS** |
+| 13 | staff1 | 500-character response | Accepted | HTTP 200; 500 characters stored | **PASS** |
+| 14 | staff1 | Missing sesskey, then wrong sesskey | 403 both, data unchanged | HTTP 403 + 403; status unchanged | **PASS** |
+| 15 | learner1 | Create title `<script>alert(1)</script>` | Stored verbatim; rendered as text | Stored; 1 escaped, 0 executable occurrences | **PASS** |
+| 16 | staff1 | Operate on record id 99999 | Safe 404, no internal detail | HTTP 404; no SQL text or server path in body | **PASS** |
+| 17 | staff1 | `status` = `deleted` | 400, status unchanged | HTTP 400; status unchanged | **PASS** |
 
 **Totals: 17 passed, 0 failed.**
+
+### Mapping to the specification's mandatory tests (Section 14)
+
+| Specification test | Covered by |
+|---|---|
+| Unauthenticated user opens plugin page | Test 01, Figure 3 |
+| Student creates a valid request | Test 03, Figure 11 |
+| Student submits missing/invalid fields | Tests 04, 05 |
+| Student views own records | Test 06, Figure 4 |
+| Student changes another student's record id | Test 08, Figure 5 |
+| Student calls teacher-only operation directly | Test 09 |
+| Teacher views authorized course records | Test 10, Figures 6–7 |
+| Teacher attempts another unauthorized course | Access-control matrix §7; capability is evaluated in the record's own course context (no second course exists in the demo instance, so this is verified by the context-recomputation code path and test 09's capability denial) |
+| Missing or invalid sesskey on state change | Test 14, Figure 12 |
+| Injected HTML/JavaScript text | Test 15, Figure 11 |
+| Missing record | Test 16 |
+| Expired/logout session during AJAX call | Test 02 (401 path), manual check M4 |
+| Browser and server diagnostics | Manual check M5 |
 
 ### Manual checks (browser-only)
 
 | # | Check | Result |
 |---|---|---|
-| M1 | Site and version page load without fatal errors | TODO(HUMAN) — confirm and screenshot |
-| M2 | Participants page shows all three users with correct roles | TODO(HUMAN) |
-| M3 | Network tab shows the JSON request and response | TODO(HUMAN) |
-| M4 | Log out in a second tab, then press Update → session error, client stops | TODO(HUMAN) |
-| M5 | No unexplained console, PHP or database errors | TODO(HUMAN) |
+| M1 | Site loads without fatal errors | **PASS** — Figure 1 |
+| M2 | Participants page shows all three users with correct roles | **PASS** — Figure 2 |
+| M3 | Network tab shows the JSON request and response | **PASS** — Figures 9, 10 |
+| M4 | Log out in a second tab, then press Update → session error, client stops | TODO(HUMAN) — confirm during the demonstration |
+| M5 | No unexplained console, PHP or database errors | TODO(HUMAN) — confirm during the demonstration |
 
 ---
 
 ## 14. Screenshots
 
-Capture the images listed in `screenshots/SCREENSHOTS_NEEDED.md` and insert them
-here with the captions below. **No cookie, sesskey, password or credential may be
-visible in any image.**
+All images are in `screenshots/`. No cookie, sesskey value, password or database
+credential is visible in any of them.
 
 | Figure | File | Caption |
 |---|---|---|
-| 1 | `01-site-running.png` | TODO(HUMAN) — Moodle 4.5.4 running locally with PHP 8.1.32 |
-| 2 | `02-participants-roles.png` | TODO(HUMAN) — Participants page: staff1 (Teacher), learner1 and learner2 (Students) |
-| 3 | `03-plugin-page-learner1.png` | TODO(HUMAN) — learner1 sees only their own requests |
-| 4 | `04-denied-learner2.png` | TODO(HUMAN) — learner2 denied on learner1's record (403) |
-| 5 | `05-teacher-panel-status-change.png` | TODO(HUMAN) — staff1 changes a status with no page reload |
-| 6 | `06-network-json.png` | TODO(HUMAN) — the JSON request/response in DevTools |
-| 7 | `07-xss-rendered-as-text.png` | TODO(HUMAN) — injected script shown as text, not executed |
-| 8 | `08-sesskey-rejected.png` | TODO(HUMAN) — state change without a valid sesskey rejected |
+| 1 | `site_running_ss1.png` | The local Moodle 4.5.4 site running at `http://127.0.0.1:8080`, front page listing *CSI 3140 Demonstration Course* with Sam Teacher as teacher. No fatal errors. |
+| 2 | `participants_roles.png` | Course **Participants** page: Alex StudentA and Blair StudentB enrolled as *Student*, Sam Teacher as *Teacher*. Synthetic `@example.invalid` addresses only. |
+| 3 | `login_screen.png` | Moodle's own login form. The plugin adds no login mechanism of its own; an unauthenticated request to the plugin page is redirected here by `require_login()` before any data is produced. |
+| 4 | `learner1_requests.png` | The plugin page as **learner1** (Alex StudentA): the create form and *My requests* listing only records this student owns. |
+| 5 | `learner2_sees_no_req.png` | The same page in the same course as **learner2** (Blair StudentB): *"No requests were found."* Ownership is applied in the query, so learner1's rows are never loaded. |
+| 6 | `staff_course_req_queue_p1.png` | The plugin page as **staff1** (Sam Teacher): the student view is empty because the teacher owns nothing, and the *Course request queue* with its status filter appears below — drawn only because `has_capability('…:managecourserequests')` is true. |
+| 7 | `staff_course_req_queue_p2.png` | The full teacher queue: every request in the course with the owner's name, a per-row status select, a response field and an **Update** button. |
+| 8 | `staff_status_change.png` | The same queue after pressing **Update**: the status badge and select now read *In progress*, changed in place by `fetch()` with no page reload. |
+| 9 | `ajax_php_JSON_payload.png` | DevTools → Network → **Payload** for the `ajax.php` POST: the JSON request body (`action: "update_status"`, `id`, `status`, `response`). The `sesskey` value is redacted. |
+| 10 | `ajax_php_response_headers.png` | DevTools → Network → **Headers** for the same call: `POST http://127.0.0.1:8080/local/securecoursehub/ajax.php`, **200 OK**, `Content-Type: application/json; charset=utf-8`, `Cache-Control: no-store`. Cookie headers left collapsed. |
+| 11 | `learner1_XSS_probe.png` | A request created with the title `<script>alert(1)</script>`: stored verbatim and rendered as **literal text** in *My requests*. No dialog appears and no script executes. |
+| 12 | `csrf_forged_sesskey_rejected.png` | A hand-crafted `fetch()` to `ajax.php` from the console carrying a deliberately forged sesskey: **403 (Forbidden)**, `{success: false, error: 'The security token was missing or invalid. Reload the page and try again.'}` and the record unchanged. |
 
 ---
 
-## 15. Integration and security checklist (Section 15)
+## 15. Integration and security checklist (Specification Section 15)
 
 | Item | Completed |
 |---|---|
-| The local Moodle site runs correctly and the version is documented | ✅ 4.5.4 (Build: 20250414), PHP 8.1.32 |
+| The local Moodle site runs correctly and the version is documented | ✅ 4.5.4 (Build: 20250414), PHP 8.1.32 — §2, Figure 1 |
 | The plugin installs through Moodle without modifying core files | ✅ CLI upgrade; nothing outside `local/securecoursehub` |
-| The demonstration course and required test accounts are configured | ✅ CSI3140-DEMO + 4 synthetic accounts |
+| The demonstration course and required test accounts are configured | ✅ CSI 3140 Demonstration Course + 4 synthetic accounts — Figure 2 |
 | Every protected page or endpoint verifies login | ✅ `require_login()` in `index.php` and `ajax.php` |
 | Capabilities are defined in `db/access.php` | ✅ three capabilities |
 | Authorization checks use the correct system or course context | ✅ `CONTEXT_COURSE`, recomputed from the record |
@@ -657,13 +777,13 @@ visible in any image.**
 | The plugin uses Moodle's Database API | ✅ `$DB` with placeholders only |
 | Input is validated on the server | ✅ type, presence, length, whitelist |
 | State-changing requests validate sesskey/CSRF protection | ✅ all six actions and all form posts |
-| Output escaped and injected scripts do not execute | ✅ test 15 |
-| At least one JSON/fetch interaction works dynamically | ✅ teacher status update, plus student create |
+| Output escaped and injected scripts do not execute | ✅ test 15, Figure 11 |
+| At least one JSON/fetch interaction works dynamically | ✅ teacher status update, plus student create — Figures 8–10 |
 | Client-side restrictions are duplicated by server-side checks | ✅ test 09 proves it |
 | Unauthenticated and forbidden cases are tested | ✅ tests 01, 02, 08, 09 |
 | Invalid input and missing records are tested | ✅ tests 04, 05, 12, 16, 17 |
-| No passwords, cookies, sesskeys, config.php or moodledata are submitted | ✅ enforced by `package.sh` secret scan |
-| The README explains installation, permissions, execution and testing | ✅ |
+| No passwords, cookies, sesskeys, config.php or moodledata are submitted | ✅ enforced by the `package.sh` secret scan |
+| The README explains installation, permissions, execution and testing | ✅ `local/securecoursehub/README.md` |
 | The report explains architecture, AuthN, AuthZ, sessions, security, privacy and testing | ✅ this document |
 
 ---
@@ -697,7 +817,12 @@ visible in any image.**
    test. A good reminder that a test harness reporting a failure is not proof
    that the system under test is broken.
 
-5. **Store-raw vs strip-on-input for XSS.** Stripping tags at input was
+5. **The AMD build copy is what Moodle actually serves.** Editing
+   `amd/src/dashboard.js` alone changed nothing in the browser, because Moodle
+   serves `amd/build/dashboard.min.js` in production mode. Both files are now
+   kept in sync and the working README documents the step.
+
+6. **Store-raw vs strip-on-input for XSS.** Stripping tags at input was
    considered and rejected: it silently destroys legitimate user text and only
    protects the contexts anticipated at write time. Escaping at output is
    correct in every context, and it makes the security property demonstrable —
@@ -706,6 +831,9 @@ visible in any image.**
 ### Known limitations
 
 - Course-scoped management only; no site-wide `manageall` capability.
+- Only one demonstration course exists in the local instance, so the
+  "teacher in an unauthorized course" case is argued from the code path and the
+  capability model rather than exercised against a second live course.
 - A staff response replaces the previous note; there is no history or audit
   trail of who changed a status and when.
 - Deletion is immediate and permanent — no soft delete, no restore.
@@ -715,35 +843,3 @@ visible in any image.**
   records are removed.
 - English strings only.
 
-### TODO(HUMAN) — demonstration reflection
-
-After the TA demonstration, add a short paragraph covering: which part the team
-found hardest to explain, one thing that would be designed differently with more
-time, and each member's contribution.
-
----
-
-## 17. References
-
-1. Moodle Developer Documentation — *Local plugins* and *Common plugin files*.
-   <https://moodledev.io/docs/apis/plugintypes/local>
-2. Moodle Developer Documentation — *Access API* (roles, capabilities, contexts,
-   `require_login()`, `require_capability()`).
-   <https://moodledev.io/docs/apis/subsystems/access>
-3. Moodle Developer Documentation — *Database API* (`$DB`, placeholders).
-   <https://moodledev.io/docs/apis/core/dml>
-4. Moodle Developer Documentation — *XMLDB* schema definitions.
-   <https://moodledev.io/general/development/tools/xmldb>
-5. Moodle Developer Documentation — *Output API* and escaping helpers
-   (`s()`, `format_string()`, `html_writer`).
-6. Moodle Developer Documentation — *Privacy API*.
-   <https://moodledev.io/docs/apis/subsystems/privacy>
-7. Moodle Docs — *Security guidelines*: unauthorised access, CSRF (`sesskey`),
-   XSS, input/output handling.
-   <https://moodledev.io/general/development/policies/security>
-8. Moodle Developer Documentation — *JavaScript modules (AMD)*.
-   <https://moodledev.io/docs/guides/javascript>
-9. OWASP Top 10 (2021) — used for the risk mapping in section 12.
-   <https://owasp.org/Top10/>
-10. CSI 3140 — Chapter 15, *Authenticating and Authorizing Requests*.
-11. CSI 3140 — Laboratory 4, *Client-Server Interaction and Modern Web Services*.

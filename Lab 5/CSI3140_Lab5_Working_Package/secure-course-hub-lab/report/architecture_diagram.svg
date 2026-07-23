@@ -49,10 +49,16 @@
   <line class="arrow" x1="285" y1="195" x2="225" y2="255"/>
   <text x="235" y="292" class="small">HTML / JSON</text>
 
+  <line class="arrow" x1="405" y1="225" x2="405" y2="285"/>
+  <text x="415" y="262" class="small">authenticated $USER</text>
+
   <line class="arrow" x1="525" y1="150" x2="585" y2="185"/>
   <line class="arrow" x1="525" y1="360" x2="585" y2="300"/>
+  <text x="536" y="330" class="small">granted</text>
   <line class="arrow" x1="830" y1="235" x2="895" y2="235"/>
+  <text x="838" y="228" class="small">$DB placeholders</text>
   <line class="arrow" x1="895" y1="270" x2="830" y2="270"/>
+  <text x="838" y="290" class="small">records</text>
 
   <text x="550" y="485" text-anchor="middle" class="small">Security boundary: Moodle authentication + course capabilities + record ownership + server-side validation</text>
 </svg>

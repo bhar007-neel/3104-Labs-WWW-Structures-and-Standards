@@ -1,7 +1,9 @@
 # Secure Course Hub (`local_securecoursehub`)
 
-A Moodle **local plugin** for CSI 3140 Laboratory 5. Students raise course help
-requests; teaching staff triage them. Everything is built on Moodle's own
+A Moodle **local plugin** for CSI 3140 Laboratory 5. 
+Students raise course help
+requests; teaching staff triage them. 
+Everything is built on Moodle's own
 authentication, session, capability and database APIs — no Moodle core file is
 modified and no separate password store exists.
 
@@ -21,12 +23,13 @@ instance (`$CFG->release` and `PHP_VERSION`), not copied from documentation.
 | Host platform | Docker Desktop, `bitnamilegacy/moodle:4.5` + `bitnamilegacy/mariadb:11.4` |
 | Site URL | `http://127.0.0.1:8080` |
 
-The site must be reached at **`127.0.0.1`, never `localhost`** — Moodle compares
+The site must be reached at `127.0.0.1`, never `localhost` — Moodle compares
 the request host to `$CFG->wwwroot` and a mismatch bounces every request back to
 the login page.
 
-Developer debugging is enabled (`debug = DEVELOPER`) but **debug display is
-turned off** (`debugdisplay = 0`). Diagnostics go to the server log where the
+Developer debugging is enabled (`debug = DEVELOPER`) but debug display is
+turned off (`debugdisplay = 0`). 
+Diagnostics go to the server log where the
 developer can read them, and never into an HTTP response where they could leak
 paths, SQL or configuration values.
 
@@ -71,7 +74,7 @@ re-run the upgrade. Back up before schema changes.
 ## 3. Test accounts
 
 Synthetic accounts, created by the setup script, valid only in this throwaway
-local container. No real person's data is used anywhere in this project.
+local container. 
 
 | Account | Password | Role | Notes |
 |---|---|---|---|
@@ -95,7 +98,7 @@ All three capabilities are defined at `CONTEXT_COURSE` in `db/access.php`.
 | `local/securecoursehub:createrequest` | write | student, editingteacher, manager | Raise a request in an accessible course |
 | `local/securecoursehub:managecourserequests` | write, `RISK_PERSONAL` | editingteacher, manager | See and manage every request in that course |
 
-Defining a capability is never enough — each one is enforced server side on every
+Defining a capability — each one is enforced server side on every
 entry point:
 
 - `require_capability()` where access is mandatory (page entry, teacher actions).
@@ -168,27 +171,4 @@ console-error check).
 
 ---
 
-## 8. Known limitations
-
-- One request table with no attachments, comments or notification workflow.
-- No `manageall` site-wide capability: management is deliberately scoped to a
-  course, so a teacher in one course gains nothing in another.
-- A teacher's response replaces the previous note rather than keeping a history.
-- Deletion is immediate and permanent; there is no soft-delete or restore.
-- The status filter is applied server side on the full course list; with tens of
-  thousands of rows a paged query would be needed.
-- No retention job: records live until the course is deleted or a privacy
-  request removes them (the Privacy API provider supports export and deletion).
-- English (`en`) strings only.
-
----
-
-## 9. Attribution
-
-Original work for CSI 3140 Laboratory 5. No third-party code, icons or libraries
-are bundled; the plugin uses only Moodle core APIs (Access API, Database API,
-Output API, Privacy API) and the browser's native `fetch()`.
-
-AI assistance was used during development and is disclosed per the course
-academic integrity requirements; every submitted line has been reviewed, tested
-and is explainable by the team.
+AI was used to faciliate the creation of report and readme's
