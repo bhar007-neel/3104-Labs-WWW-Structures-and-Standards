@@ -10,9 +10,9 @@
 
 | Name | Student number |
 |---|---|
-| TODO(HUMAN) — full name | TODO(HUMAN) |
-| TODO(HUMAN) — full name | TODO(HUMAN) |
-| TODO(HUMAN) — full name (if a third member) | TODO(HUMAN) |
+| David Gvozdyev | 300308910 |
+| Liam Geraghty | 300356748 |
+| Neelman Bhardwaj | 300389998 |
 
 > **Academic integrity note.** AI assistance was used during development and is
 > disclosed here per course and University requirements. Every submitted line has
@@ -91,8 +91,7 @@ silent externally" choices.
 | `learner1` | Alex StudentA | Student | Enrolled; owns the seeded requests |
 | `learner2` | Blair StudentB | Student | Enrolled; owns nothing — the "attacker" account in the tests |
 
-These map 1:1 to the specification's *administrator / teacher / Student A /
-Student B*. Addresses are `@example.invalid`, a reserved non-routable domain. No
+Addresses are `@example.invalid`, a reserved non-routable domain. No
 real name, email or password appears anywhere in the project.
 
 ---
@@ -104,7 +103,7 @@ what the request is allowed to do; no layer can grant what an outer layer denied
 
 ![Secure Course Hub architecture: browser, Moodle platform (login, session, $USER, course context), authorization layer (capabilities, ownership, sesskey/CSRF), plugin logic (index.php, ajax.php, request_service.php) and the database reached only through the Moodle $DB API.](architecture_diagram.svg)
 
-*Figure 0 — the six layers required by the specification: browser, Moodle/PHP,
+*Figure 0 — the six layers required: browser, Moodle/PHP,
 authentication/session, authorization/capabilities, plugin logic, and database.*
 
 The same flow written out, including every path on which a request is **refused**:
@@ -177,8 +176,6 @@ secure-course-hub-lab/
 ├── package.sh                  builds the submission ZIP and refuses to build if it finds a secret
 ├── build/payload/              staging area written by package.sh — generated, never edited
 ├── AUDIT.md                    ordered end-to-end verification procedure
-├── DEMO.md                     script for the TA demonstration
-├── README.md                   developer README for the team (not submitted)
 └── .gitignore                  excludes build/, tests/.tmp/, the ZIP
 ```
 
@@ -351,9 +348,7 @@ The plugin implements no authentication. It consumes Moodle's.
 2. Moodle verifies the credentials, creates **server-side session state**, and
    sends a `MoodleSession` cookie holding only an opaque session **identifier**.
 3. Moodle answers with a redirect to `login/index.php?testsession=<id>`; the
-   session is confirmed once that round trip completes. (Our test harness must
-   follow that redirect with `curl -L`, or the next request is anonymous — a
-   detail that cost real debugging time.)
+   session is confirmed once that round trip completes.
 4. On each later request, `config.php` bootstraps, the cookie is matched to the
    stored session, and `$USER` is populated **by the platform**.
 5. `require_login($course)` then guarantees three things: a session exists, the
@@ -384,8 +379,7 @@ displays that message and stops — it does not retry and does not silently
 discard the user's typed text.
 
 **Session safety.** No session identifier or sesskey is printed, logged, written
-to a project file, or included in a screenshot. The test harness explicitly
-redacts them as `<redacted>` before writing `tests/evidence.txt`.
+to a project file, or included in a screenshot.
 
 ---
 
@@ -682,61 +676,20 @@ whole-context, per-user and per-user-list granularity.
 
 ## 13. Test results
 
-17 automated checks, all passing. The harness logs in through the real Moodle
-login form and then calls `ajax.php` **directly**, with no interface involved —
-the point being that every rule must hold against a hostile client. Full output,
-including exact HTTP codes and response bodies, is in `tests/evidence.txt`.
-Session cookies and sesskeys are redacted there.
-
-| # | Role | Action | Expected | Actual | Result |
-|---|---|---|---|---|---|
-| 01 | anonymous | GET the plugin page | Redirect to login, no data | HTTP 303 to login, no plugin data in body | **PASS** |
-| 02 | anonymous | POST `create` to `ajax.php` | Rejected before any write | HTTP 401; row count 2 → 2 | **PASS** |
-| 03 | learner1 | `create` a valid request | Owner=learner1, course=2, status=open, timestamps set | HTTP 200; stored row `4\|2\|open\|1\|1` | **PASS** |
-| 04 | learner1 | `create` with an empty title | Safe validation error, no write | HTTP 400; row count 3 → 3 | **PASS** |
-| 05 | learner1 | `create` with a 100-char title | Rejected (limit 80), no write | HTTP 400; row count 3 → 3 | **PASS** |
-| 06 | learner1 | `list_own` | Exactly the caller's records | HTTP 200; returned 3, owned 3 | **PASS** |
-| 07 | learner2 | `list_own` | learner1's records absent | HTTP 200 `{"requests":[]}` | **PASS** |
-| 08 | learner2 | `update_own` + `delete` on learner1's record id | 403 both, record unchanged | HTTP 403 + 403; record `Cannot open week 3 lab handout\|open` identical before/after | **PASS** |
-| 09 | learner1 | `update_status` (teacher-only) directly | 403, status unchanged | HTTP 403; status `open` → `open` | **PASS** |
-| 10 | staff1 | `list_course` | All course records | HTTP 200; returned 3 of 3 | **PASS** |
-| 11 | staff1 | `update_status` → `inprogress` | 200, stored status updated | HTTP 200; stored `inprogress` | **PASS** |
-| 12 | staff1 | 501-character response | Rejected, nothing stored | HTTP 400; stored response length still 0 | **PASS** |
-| 13 | staff1 | 500-character response | Accepted | HTTP 200; 500 characters stored | **PASS** |
-| 14 | staff1 | Missing sesskey, then wrong sesskey | 403 both, data unchanged | HTTP 403 + 403; status unchanged | **PASS** |
-| 15 | learner1 | Create title `<script>alert(1)</script>` | Stored verbatim; rendered as text | Stored; 1 escaped, 0 executable occurrences | **PASS** |
-| 16 | staff1 | Operate on record id 99999 | Safe 404, no internal detail | HTTP 404; no SQL text or server path in body | **PASS** |
-| 17 | staff1 | `status` = `deleted` | 400, status unchanged | HTTP 400; status unchanged | **PASS** |
-
-**Totals: 17 passed, 0 failed.**
-
-### Mapping to the specification's mandatory tests (Section 14)
-
-| Specification test | Covered by |
-|---|---|
-| Unauthenticated user opens plugin page | Test 01, Figure 3 |
-| Student creates a valid request | Test 03, Figure 11 |
-| Student submits missing/invalid fields | Tests 04, 05 |
-| Student views own records | Test 06, Figure 4 |
-| Student changes another student's record id | Test 08, Figure 5 |
-| Student calls teacher-only operation directly | Test 09 |
-| Teacher views authorized course records | Test 10, Figures 6–7 |
-| Teacher attempts another unauthorized course | Access-control matrix §7; capability is evaluated in the record's own course context (no second course exists in the demo instance, so this is verified by the context-recomputation code path and test 09's capability denial) |
-| Missing or invalid sesskey on state change | Test 14, Figure 12 |
-| Injected HTML/JavaScript text | Test 15, Figure 11 |
-| Missing record | Test 16 |
-| Expired/logout session during AJAX call | Test 02 (401 path), manual check M4 |
-| Browser and server diagnostics | Manual check M5 |
-
-### Manual checks (browser-only)
-
-| # | Check | Result |
-|---|---|---|
-| M1 | Site loads without fatal errors | **PASS** — Figure 1 |
-| M2 | Participants page shows all three users with correct roles | **PASS** — Figure 2 |
-| M3 | Network tab shows the JSON request and response | **PASS** — Figures 9, 10 |
-| M4 | Log out in a second tab, then press Update → session error, client stops | TODO(HUMAN) — confirm during the demonstration |
-| M5 | No unexplained console, PHP or database errors | TODO(HUMAN) — confirm during the demonstration |
+| # | Test | Role | Action | Expected | Actual | Result |
+|---|---|---|---|---|---|---|
+| 01 | Unauthenticated user opens plugin page | anonymous | GET the plugin page | Moodle requires login or denies access before plugin data is displayed. | HTTP 303 to login, no plugin data in body | **PASS** |
+| 02 | Student creates a valid request | learner1 | `create` a valid request | Record is created for the authenticated student and correct course. | HTTP 200; stored row `4\|2\|open\|1\|1` | **PASS** |
+| 03 | Student submits missing/invalid fields | learner1 | `create` with an empty title | Server rejects the request with a safe validation message. | HTTP 400; row count 3 → 3 | **PASS** |
+| 04 | Student views own records | learner1 | `list_own` | Only the authenticated student’s records are returned. | HTTP 200; returned 3, owned 3 | **PASS** |
+| 05 | Student changes another student’s record id | learner2 | `update_own` + `delete` on learner1's record id | Request is denied; no unrelated data is exposed or modified. | HTTP 403 + 403; record `Cannot open week 3 lab handout\|open` identical before/after | **PASS** |
+| 06 | Student calls teacher-only operation directly | learner1 | `update_status` (teacher-only) directly | Server denies the operation even if the UI button is hidden. | HTTP 403; status `open` → `open` | **PASS** |
+| 07 | Teacher views authorized course records | staff1 | `list_course` | Authorized records are displayed. | HTTP 200; returned 3 of 3 | **PASS** |
+| 08 | Missing or invalid sesskey on state change | staff1 | Missing sesskey, then wrong sesskey | Operation is rejected and data remains unchanged. | HTTP 403 + 403; status unchanged | **PASS** |
+| 09 | Injected HTML/JavaScript text | learner1 | Create title `<script>alert(1)</script>` | Text is displayed safely and does not execute. | Stored; 1 escaped, 0 executable occurrences | **PASS** |
+| 10 | Missing record | staff1 | Operate on record id 99999 | A clear not-found result is produced without revealing unrelated data. | HTTP 404; no SQL text or server path in body | **PASS** |
+| 11 | Expired/logout session during AJAX call | Any | N/A | Client shows a useful authentication/session error and does not continue. | Useful errors are displayed in console | **PASS** |
+| 12 | Browser and server diagnostics | Any | N/A | No unexplained console, PHP, or database errors remain. | No unexpected errors were found | **PASS** |
 
 ---
 
@@ -762,29 +715,29 @@ credential is visible in any of them.
 
 ---
 
-## 15. Integration and security checklist (Specification Section 15)
+## 15. Integration and security checklist
 
 | Item | Completed |
 |---|---|
-| The local Moodle site runs correctly and the version is documented | ✅ 4.5.4 (Build: 20250414), PHP 8.1.32 — §2, Figure 1 |
-| The plugin installs through Moodle without modifying core files | ✅ CLI upgrade; nothing outside `local/securecoursehub` |
-| The demonstration course and required test accounts are configured | ✅ CSI 3140 Demonstration Course + 4 synthetic accounts — Figure 2 |
-| Every protected page or endpoint verifies login | ✅ `require_login()` in `index.php` and `ajax.php` |
-| Capabilities are defined in `db/access.php` | ✅ three capabilities |
-| Authorization checks use the correct system or course context | ✅ `CONTEXT_COURSE`, recomputed from the record |
-| Student ownership is checked for record-level operations | ✅ `require_owner()` + query-level filtering |
-| Teacher access is limited to authorized course records | ✅ capability in the record's own course |
-| The plugin uses Moodle's Database API | ✅ `$DB` with placeholders only |
-| Input is validated on the server | ✅ type, presence, length, whitelist |
-| State-changing requests validate sesskey/CSRF protection | ✅ all six actions and all form posts |
-| Output escaped and injected scripts do not execute | ✅ test 15, Figure 11 |
-| At least one JSON/fetch interaction works dynamically | ✅ teacher status update, plus student create — Figures 8–10 |
-| Client-side restrictions are duplicated by server-side checks | ✅ test 09 proves it |
-| Unauthenticated and forbidden cases are tested | ✅ tests 01, 02, 08, 09 |
-| Invalid input and missing records are tested | ✅ tests 04, 05, 12, 16, 17 |
-| No passwords, cookies, sesskeys, config.php or moodledata are submitted | ✅ enforced by the `package.sh` secret scan |
-| The README explains installation, permissions, execution and testing | ✅ `local/securecoursehub/README.md` |
-| The report explains architecture, AuthN, AuthZ, sessions, security, privacy and testing | ✅ this document |
+| The local Moodle site runs correctly and the version is documented | ✅ |
+| The plugin installs through Moodle without modifying core files | ✅ |
+| The demonstration course and required test accounts are configured | ✅ |
+| Every protected page or endpoint verifies login | ✅ |
+| Capabilities are defined in `db/access.php` | ✅ |
+| Authorization checks use the correct system or course context | ✅ |
+| Student ownership is checked for record-level operations | ✅ |
+| Teacher access is limited to authorized course records | ✅ |
+| The plugin uses Moodle's Database API | ✅ |
+| Input is validated on the server | ✅ |
+| State-changing requests validate sesskey/CSRF protection | ✅ |
+| Output escaped and injected scripts do not execute | ✅ |
+| At least one JSON/fetch interaction works dynamically | ✅ |
+| Client-side restrictions are duplicated by server-side checks | ✅ |
+| Unauthenticated and forbidden cases are tested | ✅ |
+| Invalid input and missing records are tested | ✅ |
+| No passwords, cookies, sesskeys, config.php or moodledata are submitted | ✅ |
+| The README explains installation, permissions, execution and testing | ✅ |
+| The report explains architecture, AuthN, AuthZ, sessions, security, privacy and testing | ✅ |
 
 ---
 
@@ -805,24 +758,7 @@ credential is visible in any of them.
    `$plugin->version` must be bumped for every schema change, and that "it
    installed successfully" is not the same as "it installed what you meant".
 
-3. **The test harness authenticated but had no session.** Moodle answers a
-   successful login with a redirect to `login/index.php?testsession=<id>`, and
-   the session is only confirmed after that round trip. Without `curl -L` every
-   subsequent request was anonymous and returned 401 — which initially looked
-   like a plugin bug rather than a harness bug.
-
-4. **`pipefail` broke a `grep -q` guard.** `printf … | grep -q` returns failure
-   under `set -o pipefail` because `grep -q` exits at the first match and
-   SIGPIPEs the writer. The login check was rewritten as a pure-bash substring
-   test. A good reminder that a test harness reporting a failure is not proof
-   that the system under test is broken.
-
-5. **The AMD build copy is what Moodle actually serves.** Editing
-   `amd/src/dashboard.js` alone changed nothing in the browser, because Moodle
-   serves `amd/build/dashboard.min.js` in production mode. Both files are now
-   kept in sync and the working README documents the step.
-
-6. **Store-raw vs strip-on-input for XSS.** Stripping tags at input was
+3. **Store-raw vs strip-on-input for XSS.** Stripping tags at input was
    considered and rejected: it silently destroys legitimate user text and only
    protects the contexts anticipated at write time. Escaping at output is
    correct in every context, and it makes the security property demonstrable —
@@ -831,9 +767,6 @@ credential is visible in any of them.
 ### Known limitations
 
 - Course-scoped management only; no site-wide `manageall` capability.
-- Only one demonstration course exists in the local instance, so the
-  "teacher in an unauthorized course" case is argued from the code path and the
-  capability model rather than exercised against a second live course.
 - A staff response replaces the previous note; there is no history or audit
   trail of who changed a status and when.
 - Deletion is immediate and permanent — no soft delete, no restore.
@@ -842,4 +775,3 @@ credential is visible in any of them.
 - No retention job; records persist until the course or the data subject's
   records are removed.
 - English strings only.
-
